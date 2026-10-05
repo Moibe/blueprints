@@ -13,6 +13,20 @@
       .toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
       .toUpperCase()
   );
+
+  // Guarda el objetivo editado en el rótulo; regresa el valor ya limpio que guardó el servidor.
+  async function guardarObjetivo(objetivo: string) {
+    const res = await fetch(`/api/secciones/${data.seccion.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ objetivo })
+    });
+    const body: { error?: string; seccion?: { objetivo: string | null } } = await res
+      .json()
+      .catch(() => ({}));
+    if (!res.ok || !body.seccion) throw new Error(body.error ?? 'No se pudo guardar.');
+    return body.seccion.objetivo ?? '';
+  }
 </script>
 
 <svelte:head>
@@ -32,7 +46,15 @@
   </div>
 
   <footer class="sheet-foot">
-    <Rotulo proyecto={data.seccion.nombre} plano={data.seccion.nombre} hoja={codigo} {fecha} />
+    <!-- key: al pasar de una sección a otra se reinicia el rótulo (sin edición a medias). -->
+    {#key data.seccion.id}
+      <Rotulo
+        proyecto={data.seccion.nombre}
+        objetivo={{ valor: data.seccion.objetivo, onguardar: guardarObjetivo }}
+        hoja={codigo}
+        {fecha}
+      />
+    {/key}
   </footer>
 </div>
 

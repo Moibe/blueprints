@@ -1,0 +1,1 @@
+ALTER TABLE `secciones` ADD `objetivo` text;

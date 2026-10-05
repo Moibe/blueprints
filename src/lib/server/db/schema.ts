@@ -5,6 +5,8 @@ import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
 export const secciones = sqliteTable('secciones', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	nombre: text('nombre').notNull(),
+	// Se edita en el cuadro de rotulación de la hoja (clic en "Objetivo"). Null = sin objetivo.
+	objetivo: text('objetivo'),
 	creado: integer('creado', { mode: 'timestamp' })
 		.notNull()
 		.$defaultFn(() => new Date())

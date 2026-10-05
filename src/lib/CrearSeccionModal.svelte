@@ -2,7 +2,7 @@
   // Modal de + Crear: pide el nombre de la sección nueva y la crea vía POST /api/secciones.
   // Es un <dialog> nativo con estilo de plano: vive en el top layer, así que queda encima de
   // todo aunque las barras tengan transform, y Escape lo cierra solo.
-  import { NOMBRE_MAX, limpiarNombre } from '$lib/secciones';
+  import { NOMBRE_MAX, limpiarTexto } from '$lib/secciones';
 
   let {
     open = $bindable(false),
@@ -34,7 +34,7 @@
 
   async function crear(e: SubmitEvent) {
     e.preventDefault();
-    const limpio = limpiarNombre(nombre);
+    const limpio = limpiarTexto(nombre);
     if (!limpio || enviando) return;
 
     enviando = true;
@@ -97,7 +97,7 @@
 
     <div class="acciones">
       <button type="button" class="btn-sec" onclick={() => (open = false)}>Cancelar</button>
-      <button type="submit" class="btn-pri" disabled={!limpiarNombre(nombre) || enviando}>
+      <button type="submit" class="btn-pri" disabled={!limpiarTexto(nombre) || enviando}>
         {enviando ? 'Creando…' : 'Crear'}
       </button>
     </div>
