@@ -32,7 +32,7 @@
   </div>
 
   <footer class="sheet-foot">
-    <Rotulo plano={data.seccion.nombre} hoja={codigo} {fecha} />
+    <Rotulo proyecto={data.seccion.nombre} plano={data.seccion.nombre} hoja={codigo} {fecha} />
   </footer>
 </div>
 
