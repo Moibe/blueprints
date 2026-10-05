@@ -1,6 +1,7 @@
 <script lang="ts">
   // Cuadro de rotulación, el de la esquina de un plano. Con `renombrar`, el nombre del
   // proyecto se edita en el lugar (clic → campo; Enter o clic fuera guarda, Escape cancela).
+  // Con `avance`, una segunda columna muestra cuántos objetivos y tareas lleva el proyecto.
   import EnLinea from '$lib/EnLinea.svelte';
 
   let {
@@ -8,6 +9,7 @@
     etiquetaPlano = 'Plano',
     plano,
     renombrar,
+    avance,
     proyecto = 'blueprints'
   }: {
     fecha: string;
@@ -15,8 +17,14 @@
     etiquetaPlano?: string;
     plano: string;
     renombrar?: { max: number; onguardar: (valor: string) => Promise<string> };
+    avance?: { objetivos: number; tareas: number; logradas: number };
     proyecto?: string;
   } = $props();
+
+  const tareas = $derived(
+    !avance ? '' : avance.tareas === 0 ? 'Sin tareas' : `${avance.logradas} de ${avance.tareas} logradas`
+  );
+  const completo = $derived(!!avance && avance.tareas > 0 && avance.logradas === avance.tareas);
 </script>
 
 <aside class="cartouche" aria-label="Cuadro de rotulación">
@@ -30,9 +38,16 @@
       {/if}
     </span>
   </div>
-  <div class="c-grid">
+  <!-- Con avance: 2×2 (a la izquierda lo del proyecto, a la derecha sus totales); sin él, apilado. -->
+  <div class="c-grid" class:dos={!!avance}>
     <div><span class="k">{etiquetaPlano}</span><span class="v">{plano}</span></div>
+    {#if avance}
+      <div><span class="k">Objetivos</span><span class="v">{avance.objetivos}</span></div>
+    {/if}
     <div><span class="k">Fecha</span><span class="v">{fecha}</span></div>
+    {#if avance}
+      <div><span class="k">Tareas</span><span class="v" class:completo>{tareas}</span></div>
+    {/if}
   </div>
 </aside>
 
@@ -53,14 +68,23 @@
   .c-grid {
     display: grid;
   }
+  .c-grid.dos {
+    grid-template-columns: 1fr 1fr;
+  }
   .c-grid > div {
     display: flex;
     flex-direction: column;
     min-width: 0;
     padding: 0.4rem 0.7rem;
   }
-  .c-grid > div + div {
+  .c-grid:not(.dos) > div + div {
     border-top: 1px solid rgba(255, 255, 255, 0.6);
+  }
+  .c-grid.dos > div:nth-child(odd) {
+    border-right: 1px solid rgba(255, 255, 255, 0.6);
+  }
+  .c-grid.dos > div:nth-child(-n + 2) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
   }
   .k {
     font-size: 0.58rem;
@@ -79,5 +103,9 @@
     font-size: 1.35rem;
     letter-spacing: 0.03em;
     line-height: 1.2;
+  }
+  /* Todas las tareas logradas: el mismo dorado del contorno de las tarjetas. */
+  .v.completo {
+    color: #f5c542;
   }
 </style>

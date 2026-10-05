@@ -33,11 +33,9 @@
 
   const total = $derived(objetivos.reduce((n, o) => n + o.tarjetas.length, 0));
   const logradas = $derived(objetivos.reduce((n, o) => n + o.tarjetas.filter((t) => t.hecho).length, 0));
-  const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+  // Los totales viven en el rótulo; bajo el título solo queda el aviso de hoja vacía.
   const bajada = $derived(
-    objetivos.length === 0
-      ? 'Hoja en blanco: crea el primer objetivo de esta sección.'
-      : `${plural(objetivos.length, 'objetivo', 'objetivos')} · ${plural(total, 'tarea', 'tareas')} · ${plural(logradas, 'lograda', 'logradas')}`
+    objetivos.length === 0 ? 'Hoja en blanco: crea el primer objetivo de esta sección.' : ''
   );
   // Siguiente objetivo: el primero que aún no esté completo (sin tareas cuenta como pendiente).
   const siguiente = $derived(
@@ -113,6 +111,7 @@
         renombrar={editable}
         etiquetaPlano="Siguiente objetivo"
         plano={siguiente}
+        avance={{ objetivos: objetivos.length, tareas: total, logradas }}
         {fecha}
       />
     {/key}

@@ -7,19 +7,20 @@
   let {
     etiqueta,
     titulo,
-    bajada,
+    bajada = '',
     cota,
     editable
   }: {
     etiqueta: string;
     titulo: string;
-    bajada: string;
+    /** Línea bajo el título; vacía = no se muestra. */
+    bajada?: string;
     cota: string;
     editable?: { max: number; onguardar: (valor: string) => Promise<string> };
   } = $props();
 </script>
 
-<header class="sheet-head">
+<header class="sheet-head" class:sin-bajada={!bajada}>
   <span class="tag">{etiqueta}</span>
   <h1>
     {#if editable}
@@ -28,7 +29,9 @@
       {titulo}
     {/if}
   </h1>
-  <p class="lead">{bajada}</p>
+  {#if bajada}
+    <p class="lead">{bajada}</p>
+  {/if}
   <Cota label={cota} />
 </header>
 
@@ -54,6 +57,10 @@
     letter-spacing: 0.02em;
     overflow-wrap: anywhere;
     text-shadow: 0 0 14px rgba(255, 255, 255, 0.25);
+  }
+  /* Sin bajada, la cota se separa del título lo mismo que la separaba la bajada. */
+  .sin-bajada h1 {
+    margin-bottom: 0.7rem;
   }
   .lead {
     margin: 0 0 0.6rem;
