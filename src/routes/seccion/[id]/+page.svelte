@@ -101,7 +101,7 @@
   <div class="sheet-top">
     {#key data.seccion.id}
       <Encabezado
-        etiqueta="Plano {codigo} · Sección"
+        etiqueta="Proyecto {codigo}"
         titulo={data.seccion.nombre}
         {bajada}
         cota="Hoja {codigo}"
