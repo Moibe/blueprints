@@ -5,13 +5,13 @@ import { tarjetas } from '$lib/server/db/schema';
 import { TARJETA_MAX, limpiarTexto } from '$lib/secciones';
 import type { RequestHandler } from './$types';
 
-const columnas = { id: tarjetas.id, texto: tarjetas.texto, hecho: tarjetas.hecho };
+const columnas = { id: tarjetas.id, texto: tarjetas.texto, hecho: tarjetas.hecho, logrado: tarjetas.logrado };
 
 // Edita el texto y/o la paloma de una tarjeta.
 export const PATCH: RequestHandler = async ({ params, request }) => {
 	const id = Number(params.id);
 	const body = await request.json().catch(() => null);
-	const cambios: { texto?: string; hecho?: boolean } = {};
+	const cambios: { texto?: string; hecho?: boolean; logrado?: Date | null } = {};
 
 	if (typeof body?.texto === 'string') {
 		const texto = limpiarTexto(body.texto);
@@ -21,7 +21,10 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 		}
 		cambios.texto = texto;
 	}
-	if (typeof body?.hecho === 'boolean') cambios.hecho = body.hecho;
+	if (typeof body?.hecho === 'boolean') {
+		cambios.hecho = body.hecho;
+		cambios.logrado = body.hecho ? new Date() : null;
+	}
 	if (!Number.isInteger(id) || Object.keys(cambios).length === 0) {
 		return json({ error: 'Petición inválida.' }, { status: 400 });
 	}

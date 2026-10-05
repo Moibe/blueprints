@@ -22,6 +22,8 @@ export const tarjetas = sqliteTable('tarjetas', {
 		.references(() => secciones.id, { onDelete: 'cascade' }),
 	texto: text('texto').notNull(),
 	hecho: integer('hecho', { mode: 'boolean' }).notNull().default(false),
+	// Cuándo se palomeó; null mientras está pendiente.
+	logrado: integer('logrado', { mode: 'timestamp' }),
 	creado: integer('creado', { mode: 'timestamp' })
 		.notNull()
 		.$defaultFn(() => new Date())

@@ -23,7 +23,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 	const tarjeta = db
 		.insert(tarjetas)
 		.values({ seccionId, texto })
-		.returning({ id: tarjetas.id, texto: tarjetas.texto, hecho: tarjetas.hecho })
+		.returning({ id: tarjetas.id, texto: tarjetas.texto, hecho: tarjetas.hecho, logrado: tarjetas.logrado })
 		.get();
 	return json({ tarjeta }, { status: 201 });
 };

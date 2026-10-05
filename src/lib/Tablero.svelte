@@ -4,7 +4,11 @@
   // la derecha la marca como completada.
   import { TARJETA_MAX, limpiarTexto } from '$lib/secciones';
 
-  type Tarjeta = { id: number; texto: string; hecho: boolean };
+  // logrado: Date desde el load, string ISO desde los endpoints (JSON).
+  type Tarjeta = { id: number; texto: string; hecho: boolean; logrado: Date | string | null };
+
+  const formatoFecha = (f: Date | string) =>
+    new Date(f).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
   let { seccionId, tarjetas }: { seccionId: number; tarjetas: Tarjeta[] } = $props();
 
   let lista = $derived(tarjetas);
@@ -84,11 +88,13 @@
   // Optimista: se palomea al instante y se revierte si el servidor falla.
   async function alternar(t: Tarjeta) {
     const hecho = !t.hecho;
-    lista = lista.map((x) => (x.id === t.id ? { ...x, hecho } : x));
+    const antes = t;
+    lista = lista.map((x) => (x.id === t.id ? { ...x, hecho, logrado: hecho ? new Date() : null } : x));
     try {
-      await api(`/api/tarjetas/${t.id}`, 'PATCH', { hecho });
+      const { tarjeta } = await api(`/api/tarjetas/${t.id}`, 'PATCH', { hecho });
+      lista = lista.map((x) => (x.id === t.id ? tarjeta : x));
     } catch {
-      lista = lista.map((x) => (x.id === t.id ? { ...x, hecho: !hecho } : x));
+      lista = lista.map((x) => (x.id === t.id ? antes : x));
     }
   }
 </script>
@@ -103,6 +109,9 @@
           {@render campo()}
         {:else}
           <button type="button" class="texto" onclick={() => editar(t)}>{t.texto}</button>
+        {/if}
+        {#if t.hecho && t.logrado}
+          <span class="logrado">✓ Logrado el {formatoFecha(t.logrado)}</span>
         {/if}
       </div>
       <button
@@ -210,6 +219,13 @@
   .hecho .texto {
     text-decoration: line-through;
     opacity: 0.55;
+  }
+  .logrado {
+    margin-top: 0.45rem;
+    font-family: var(--bp-font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: #86efac;
   }
   textarea {
     width: 100%;

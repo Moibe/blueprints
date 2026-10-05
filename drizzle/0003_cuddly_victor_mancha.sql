@@ -1,0 +1,1 @@
+ALTER TABLE `tarjetas` ADD `logrado` integer;
