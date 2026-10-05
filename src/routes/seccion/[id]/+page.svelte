@@ -34,18 +34,15 @@
 </svelte:head>
 
 <div class="sheet">
-  <Encabezado
-    etiqueta="Plano {codigo} · Sección"
-    titulo={data.seccion.nombre}
-    bajada="Hoja en blanco: aquí va lo que planees para esta sección."
-    cota="Hoja {codigo}"
-  />
+  <!-- Encabezado a la izquierda y cuadro de rotulación arriba a la derecha. -->
+  <div class="sheet-top">
+    <Encabezado
+      etiqueta="Plano {codigo} · Sección"
+      titulo={data.seccion.nombre}
+      bajada="Hoja en blanco: aquí va lo que planees para esta sección."
+      cota="Hoja {codigo}"
+    />
 
-  <div class="lienzo">
-    <span>Área de dibujo</span>
-  </div>
-
-  <footer class="sheet-foot">
     <!-- key: al pasar de una sección a otra se reinicia el rótulo (sin edición a medias). -->
     {#key data.seccion.id}
       <Rotulo
@@ -55,7 +52,11 @@
         {fecha}
       />
     {/key}
-  </footer>
+  </div>
+
+  <div class="lienzo">
+    <span>Área de dibujo</span>
+  </div>
 </div>
 
 <style>
@@ -86,8 +87,12 @@
     color: rgba(255, 255, 255, 0.4);
   }
 
-  .sheet-foot {
+  /* Si no cabe al lado (pantallas angostas), el rótulo baja debajo del encabezado. */
+  .sheet-top {
     display: flex;
-    justify-content: flex-end;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
   }
 </style>
