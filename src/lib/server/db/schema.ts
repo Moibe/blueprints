@@ -13,3 +13,18 @@ export const secciones = sqliteTable('secciones', {
 });
 
 export type Seccion = typeof secciones.$inferSelect;
+
+// Tarjetas del área de dibujo de cada sección; `hecho` = palomeada como completada.
+export const tarjetas = sqliteTable('tarjetas', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	seccionId: integer('seccion_id')
+		.notNull()
+		.references(() => secciones.id, { onDelete: 'cascade' }),
+	texto: text('texto').notNull(),
+	hecho: integer('hecho', { mode: 'boolean' }).notNull().default(false),
+	creado: integer('creado', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date())
+});
+
+export type Tarjeta = typeof tarjetas.$inferSelect;

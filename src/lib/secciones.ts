@@ -2,6 +2,7 @@
 
 export const NOMBRE_MAX = 40;
 export const OBJETIVO_MAX = 140;
+export const TARJETA_MAX = 200;
 
 /** Clave de hoja que se muestra en el sidebar y en el rótulo: 1 → "A-01". */
 export const codigoHoja = (id: number) => `A-${String(id).padStart(2, '0')}`;

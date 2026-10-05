@@ -1,7 +1,8 @@
 <script lang="ts">
-  // Hoja de una sección creada con + Crear. Por ahora es una hoja en blanco con su rótulo.
+  // Hoja de una sección creada con + Crear: encabezado, rótulo y tablero de tarjetas.
   import Encabezado from '$lib/Encabezado.svelte';
   import Rotulo from '$lib/Rotulo.svelte';
+  import Tablero from '$lib/Tablero.svelte';
   import { codigoHoja } from '$lib/secciones';
   import type { PageProps } from './$types';
 
@@ -54,9 +55,9 @@
     {/key}
   </div>
 
-  <div class="lienzo">
-    <span>Área de dibujo</span>
-  </div>
+  {#key data.seccion.id}
+    <Tablero seccionId={data.seccion.id} tarjetas={data.tarjetas} />
+  {/key}
 </div>
 
 <style>
@@ -67,24 +68,6 @@
     gap: 1.25rem;
     padding: 0.5rem 0 0.25rem;
     box-sizing: border-box;
-  }
-
-  /* Área vacía de la hoja, delimitada como zona de dibujo. */
-  .lienzo {
-    flex: 1;
-    min-height: 14rem;
-    display: grid;
-    place-items: center;
-    border: 1px dashed rgba(255, 255, 255, 0.3);
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.02);
-  }
-  .lienzo span {
-    font-family: var(--bp-font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.4);
   }
 
   /* Si no cabe al lado (pantallas angostas), el rótulo baja debajo del encabezado. */
