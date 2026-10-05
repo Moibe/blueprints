@@ -76,7 +76,13 @@
           aria-current={page.url.pathname === it.href ? 'page' : undefined}
           in:fly={{ x: -10, duration: 220 }}
         >
-          <span class="nav-ico" aria-hidden="true"></span>
+          <!-- Plano: hoja con la esquina doblada, un rectángulo y su cota (línea de medida con topes). -->
+          <svg class="nav-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path class="hoja" d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+            <path d="M14 3v5h5" />
+            <path class="planta" d="M8.5 13.5h7v4.5h-7z" />
+            <path class="cota" d="M8.5 10.3v1.6M15.5 10.3v1.6M8.5 11.1h7" />
+          </svg>
           <span class="nav-label">{it.label}</span>
           <span class="nav-code">{it.code}</span>
         </a>
@@ -250,36 +256,29 @@
     color: rgba(255, 255, 255, 0.85);
   }
 
-  /* Marca de centro (círculo con cruz), igual que en la TopNav. */
+  /* Icono de plano. En la sección activa la hoja se rellena un poco. */
   .nav-ico {
-    position: relative;
-    width: 12px;
-    height: 12px;
     flex-shrink: 0;
-    border: 1.5px solid currentColor;
-    border-radius: 50%;
     opacity: 0.8;
+    transition: opacity 0.18s ease;
   }
-  .nav-ico::before,
-  .nav-ico::after {
-    content: '';
-    position: absolute;
-    background: currentColor;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+  .nav-ico .planta {
+    stroke-width: 1.3;
   }
-  .nav-ico::before {
-    width: 18px;
-    height: 1px;
+  .nav-ico .cota {
+    stroke-width: 1;
   }
-  .nav-ico::after {
-    width: 1px;
-    height: 18px;
+  .nav-ico .hoja {
+    transition: fill 0.18s ease;
+  }
+  .nav-item:hover .nav-ico {
+    opacity: 1;
   }
   .nav-item[aria-current='page'] .nav-ico {
     opacity: 1;
-    background: radial-gradient(circle, currentColor 0 2px, transparent 2.5px);
+  }
+  .nav-item[aria-current='page'] .nav-ico .hoja {
+    fill: rgba(255, 255, 255, 0.18);
   }
 
   .sidebar-footer {
