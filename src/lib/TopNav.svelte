@@ -1,8 +1,6 @@
 <script lang="ts">
   // Barra superior de plano: vidrio translúcido con marco punteado, tilt 3D al pasar el
-  // mouse y responsive (en móvil colapsa a solo-íconos). Items de ejemplo: reemplázalos.
-  import { page } from '$app/state';
-
+  // mouse. La marca lleva a la home; en móvil queda solo la escuadra.
   let tiltX = $state(0);
   let tiltY = $state(0);
 
@@ -18,13 +16,6 @@
     tiltX = 0;
     tiltY = 0;
   }
-
-  // Edita estos items por las secciones reales de tu app.
-  const items = [
-    { href: '/', label: 'Inicio' },
-    { href: '/seccion-dos', label: 'Sección dos' },
-    { href: '/seccion-tres', label: 'Sección tres' }
-  ];
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -43,15 +34,6 @@
     </svg>
     <span class="brand-title">blueprints</span>
   </a>
-
-  <nav class="topnav-nav">
-    {#each items as it (it.href)}
-      <a href={it.href} class="nav-item" aria-current={page.url.pathname === it.href ? 'page' : undefined}>
-        <span class="nav-ico" aria-hidden="true"></span>
-        <span class="nav-label">{it.label}</span>
-      </a>
-    {/each}
-  </nav>
 
   <span class="sheet-ref" aria-hidden="true">ESC 1:50 · HOJA 01</span>
 </header>
@@ -111,73 +93,6 @@
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   }
 
-  .topnav-nav {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    margin-left: 1.25rem;
-    padding-left: 1.25rem;
-    border-left: 1px dashed rgba(255, 255, 255, 0.35);
-  }
-
-  .nav-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.4rem 0.8rem;
-    color: rgba(255, 255, 255, 0.86);
-    text-decoration: none;
-    font-family: var(--bp-font-hand);
-    font-size: 1.02rem;
-    letter-spacing: 0.02em;
-    border-radius: 6px;
-    border: 1px solid transparent;
-    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-    white-space: nowrap;
-  }
-  .nav-item:hover {
-    color: #fff;
-    border: 1px dashed rgba(255, 255, 255, 0.55);
-    background: rgba(255, 255, 255, 0.05);
-  }
-  .nav-item[aria-current='page'] {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.85);
-  }
-
-  /* Marca de centro (círculo con cruz), el "ícono" placeholder de plano. */
-  .nav-ico {
-    position: relative;
-    width: 12px;
-    height: 12px;
-    flex-shrink: 0;
-    border: 1.5px solid currentColor;
-    border-radius: 50%;
-    opacity: 0.8;
-  }
-  .nav-ico::before,
-  .nav-ico::after {
-    content: '';
-    position: absolute;
-    background: currentColor;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-  }
-  .nav-ico::before {
-    width: 18px;
-    height: 1px;
-  }
-  .nav-ico::after {
-    width: 1px;
-    height: 18px;
-  }
-  .nav-item[aria-current='page'] .nav-ico {
-    opacity: 1;
-    background: radial-gradient(circle, currentColor 0 2px, transparent 2.5px);
-  }
-
   .sheet-ref {
     margin-left: auto;
     font-family: var(--bp-font-mono);
@@ -187,7 +102,7 @@
     white-space: nowrap;
   }
 
-  /* En pantallas chicas: solo íconos (oculta texto y título) para que no se desborde. */
+  /* En pantallas chicas: solo la escuadra. */
   @media (max-width: 680px) {
     .topnav {
       padding: 0 0.6rem;
@@ -200,28 +115,10 @@
     .sheet-ref {
       display: none;
     }
-    .topnav-nav {
-      margin-left: 0.5rem;
-      padding-left: 0.5rem;
-      gap: 0.1rem;
-    }
-    .nav-item {
-      padding: 0.45rem 0.6rem;
-    }
-    .nav-label {
-      display: none;
-    }
   }
   @media (max-width: 360px) {
     .topnav {
       padding: 0 0.4rem;
-    }
-    .topnav-nav {
-      margin-left: 0.35rem;
-      padding-left: 0.35rem;
-    }
-    .nav-item {
-      padding: 0.45rem 0.45rem;
     }
   }
 </style>
