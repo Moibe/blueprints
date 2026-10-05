@@ -103,16 +103,66 @@
     }
   }
 
-  // Optimista: se palomea al instante y se revierte si el servidor falla.
-  async function alternar(t: Tarjeta) {
-    const hecho = !t.hecho;
-    const antes = t;
-    lista = lista.map((x) => (x.id === t.id ? { ...x, hecho, logrado: hecho ? new Date() : null } : x));
+  // Palomear es un momento: una chispa dorada recorre el contorno de la tarjeta dejándolo
+  // dorado a su paso y, al cerrar la vuelta, la tarjeta destella y aparece la paloma.
+  const DURACION_TRAZO = 1500;
+  const DURACION_FINAL = 900;
+  type Animacion = { d: string; w: number; h: number; fase: 'trazo' | 'final' };
+  let animaciones: Record<number, Animacion> = $state({});
+
+  const esperar = (ms: number) => new Promise((listo) => setTimeout(listo, ms));
+
+  // Contorno de la tarjeta como path cerrado sobre la línea del borde (1.5px, radio 6px), en
+  // sentido horario y arrancando en el borde de arriba, justo sobre la paloma.
+  function contorno(w: number, h: number) {
+    const b = 0.75;
+    const r = 5.25;
+    const x0 = w - 27.5;
+    return (
+      `M${x0} ${b}H${w - b - r}A${r} ${r} 0 0 1 ${w - b} ${b + r}V${h - b - r}` +
+      `A${r} ${r} 0 0 1 ${w - b - r} ${h - b}H${b + r}A${r} ${r} 0 0 1 ${b} ${h - b - r}` +
+      `V${b + r}A${r} ${r} 0 0 1 ${b + r} ${b}H${x0}Z`
+    );
+  }
+
+  function alternar(t: Tarjeta, tarjeta: HTMLElement | null) {
+    if (animaciones[t.id]) return;
+    if (t.hecho) desmarcar(t);
+    else if (tarjeta) completar(t, tarjeta);
+  }
+
+  // El guardado corre en paralelo con el trazo; la tarjeta queda lograda cuando la chispa
+  // cierra la vuelta. Si el servidor falla, la animación se corta y la tarjeta queda igual.
+  async function completar(t: Tarjeta, tarjeta: HTMLElement) {
+    const sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const w = tarjeta.offsetWidth;
+    const h = tarjeta.offsetHeight;
+    if (!sinMovimiento) animaciones[t.id] = { d: contorno(w, h), w, h, fase: 'trazo' };
+
+    const [res] = await Promise.all([
+      api(`/api/tarjetas/${t.id}`, 'PATCH', { hecho: true }).catch(() => null),
+      esperar(sinMovimiento ? 0 : DURACION_TRAZO)
+    ]);
+    if (!res) {
+      delete animaciones[t.id];
+      return;
+    }
+    lista = lista.map((x) => (x.id === t.id ? res.tarjeta : x));
+    if (sinMovimiento) return;
+
+    animaciones[t.id].fase = 'final';
+    await esperar(DURACION_FINAL);
+    delete animaciones[t.id];
+  }
+
+  // Desmarcar es inmediato (optimista) y se revierte si el servidor falla.
+  async function desmarcar(t: Tarjeta) {
+    lista = lista.map((x) => (x.id === t.id ? { ...x, hecho: false, logrado: null } : x));
     try {
-      const { tarjeta } = await api(`/api/tarjetas/${t.id}`, 'PATCH', { hecho });
+      const { tarjeta } = await api(`/api/tarjetas/${t.id}`, 'PATCH', { hecho: false });
       lista = lista.map((x) => (x.id === t.id ? tarjeta : x));
     } catch {
-      lista = lista.map((x) => (x.id === t.id ? antes : x));
+      lista = lista.map((x) => (x.id === t.id ? t : x));
     }
   }
 </script>
@@ -121,7 +171,34 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="tablero" onclick={nueva}>
   {#each lista as t (t.id)}
-    <article class="tarjeta" class:hecho={t.hecho}>
+    {@const anim = animaciones[t.id]}
+    <article
+      class="tarjeta"
+      class:hecho={t.hecho}
+      class:trazando={anim?.fase === 'trazo'}
+      class:recien={anim?.fase === 'final'}
+    >
+      {#if anim}
+        <svg
+          class="chispazo"
+          class:final={anim.fase === 'final'}
+          width={anim.w}
+          height={anim.h}
+          viewBox="0 0 {anim.w} {anim.h}"
+          style="--trazo: {DURACION_TRAZO}ms"
+          aria-hidden="true"
+        >
+          <defs>
+            <filter id="resplandor-{t.id}" x="-20%" y="-60%" width="140%" height="220%">
+              <feGaussianBlur stdDeviation="3" />
+            </filter>
+          </defs>
+          <path class="rastro-halo" d={anim.d} pathLength="1" filter="url(#resplandor-{t.id})" />
+          <path class="rastro" d={anim.d} pathLength="1" />
+          <path class="chispa-halo" d={anim.d} pathLength="1" filter="url(#resplandor-{t.id})" />
+          <path class="chispa" d={anim.d} pathLength="1" />
+        </svg>
+      {/if}
       <div class="cuerpo">
         {#if editando === t.id}
           {@render campo()}
@@ -139,9 +216,9 @@
         class="check"
         aria-pressed={t.hecho}
         aria-label={t.hecho ? 'Marcar como pendiente' : 'Marcar como completada'}
-        onclick={() => alternar(t)}
+        onclick={(e) => alternar(t, e.currentTarget.closest('article'))}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1" /></svg>
       </button>
     </article>
   {/each}
@@ -199,6 +276,7 @@
   }
 
   .tarjeta {
+    position: relative;
     width: 15rem;
     min-height: 4.2rem;
     display: flex;
@@ -215,8 +293,107 @@
   .tarjeta.nueva {
     border-style: dashed;
   }
+  /* Lograda: el contorno se queda dorado. */
   .tarjeta.hecho {
-    border-color: rgba(134, 239, 172, 0.75);
+    border-color: #f5c542;
+    box-shadow:
+      0 0 0 1px rgba(245, 197, 66, 0.12),
+      0 0 14px rgba(245, 197, 66, 0.28),
+      0 4px 14px rgba(0, 0, 0, 0.18);
+  }
+
+  /* Chispazo: SVG sobre el borde (de ahí el -1.5px, el grosor del borde). Con pathLength=1,
+     1 equivale a todo el contorno. */
+  .chispazo {
+    position: absolute;
+    left: -1.5px;
+    top: -1.5px;
+    overflow: visible;
+    pointer-events: none;
+    transition: opacity 0.6s ease 0.2s;
+  }
+  .chispazo.final {
+    opacity: 0;
+  }
+  .chispazo path {
+    fill: none;
+    stroke-linecap: round;
+  }
+  /* El rastro dorado se va dibujando desde el arranque, sobre la paloma. */
+  .rastro,
+  .rastro-halo {
+    stroke-dasharray: 1 1;
+    stroke-dashoffset: 1;
+    animation: dorar var(--trazo) cubic-bezier(0.6, 0, 0.35, 1) forwards;
+  }
+  .rastro {
+    stroke: #f5c542;
+    stroke-width: 2;
+  }
+  .rastro-halo {
+    stroke: #ffd666;
+    stroke-width: 6;
+    opacity: 0.7;
+  }
+  /* La chispa es un trazo cortito que viaja en la punta del rastro, con el mismo timing,
+     y titila. */
+  .chispa {
+    stroke: #fffbe8;
+    stroke-width: 4;
+    stroke-dasharray: 0.012 0.988;
+    animation:
+      viajar-chispa var(--trazo) cubic-bezier(0.6, 0, 0.35, 1) forwards,
+      titilar 0.11s steps(2) infinite alternate;
+  }
+  .chispa-halo {
+    stroke: #ffe08a;
+    stroke-width: 14;
+    stroke-dasharray: 0.04 0.96;
+    animation:
+      viajar-halo var(--trazo) cubic-bezier(0.6, 0, 0.35, 1) forwards,
+      titilar 0.11s steps(2) infinite alternate;
+  }
+  @keyframes dorar {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes viajar-chispa {
+    from {
+      stroke-dashoffset: 0.012;
+    }
+    to {
+      stroke-dashoffset: -0.988;
+    }
+  }
+  @keyframes viajar-halo {
+    from {
+      stroke-dashoffset: 0.04;
+    }
+    to {
+      stroke-dashoffset: -0.96;
+    }
+  }
+  @keyframes titilar {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0.65;
+    }
+  }
+
+  /* Al cerrar la vuelta: destello de la tarjeta, rebote de la paloma y se dibuja la ✓. */
+  .tarjeta.recien {
+    animation: destello 0.9s ease-out;
+  }
+  @keyframes destello {
+    from {
+      box-shadow:
+        0 0 0 2px rgba(255, 224, 138, 0.9),
+        0 0 34px 6px rgba(255, 214, 102, 0.75),
+        0 4px 14px rgba(0, 0, 0, 0.18);
+    }
   }
   .cuerpo {
     flex: 1;
@@ -303,5 +480,35 @@
   .check:focus-visible {
     outline: 2px solid #fff;
     outline-offset: 2px;
+  }
+  /* Mientras la chispa da la vuelta, el círculo se pone dorado y gira. */
+  .trazando .check {
+    border: 1.5px dashed #f5c542;
+    color: transparent;
+    animation: girar 1s linear infinite;
+  }
+  .recien .check {
+    animation: rebote 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .recien .check path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: dorar 0.35s ease-out 0.12s forwards;
+  }
+  @keyframes girar {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes rebote {
+    0% {
+      transform: scale(0.3);
+    }
+    60% {
+      transform: scale(1.25);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
 </style>
