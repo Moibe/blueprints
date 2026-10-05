@@ -57,6 +57,11 @@
     onmousemove={handleMove}
     onmouseleave={handleLeave}
   >
+    <button type="button" class="create-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+      <span>Crear</span>
+    </button>
+
     <p class="sidebar-label">Índice de planos</p>
 
     <nav>
@@ -116,6 +121,41 @@
       z-index: 8;
       background: rgba(7, 31, 79, 0.92);
     }
+  }
+
+  /* Acción principal: tinta blanca invertida (relleno blanco, texto azul) con marco punteado interior. */
+  .create-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    margin: 0 0 1.1rem;
+    padding: 0.6rem 1rem;
+    font-family: var(--bp-font-hand);
+    font-size: 1.15rem;
+    letter-spacing: 0.04em;
+    color: var(--bp-b, #0b2e6f);
+    background: rgba(255, 255, 255, 0.92);
+    border: 1.5px solid #fff;
+    border-radius: 6px;
+    outline: 1px dashed rgba(11, 46, 111, 0.4);
+    outline-offset: -5px;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.18);
+    cursor: pointer;
+    transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  }
+  .create-btn:hover {
+    background: #fff;
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+  }
+  .create-btn:active {
+    transform: translateY(0);
+  }
+  .create-btn:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
   }
 
   .sidebar-label {
