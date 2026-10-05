@@ -4,8 +4,14 @@
   // la derecha la marca como completada.
   import { TARJETA_MAX, limpiarTexto } from '$lib/secciones';
 
-  // logrado: Date desde el load, string ISO desde los endpoints (JSON).
-  type Tarjeta = { id: number; texto: string; hecho: boolean; logrado: Date | string | null };
+  // Fechas: Date desde el load, string ISO desde los endpoints (JSON).
+  type Tarjeta = {
+    id: number;
+    texto: string;
+    hecho: boolean;
+    logrado: Date | string | null;
+    creado: Date | string;
+  };
 
   const formatoFecha = (f: Date | string) =>
     new Date(f).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
@@ -123,7 +129,9 @@
           <button type="button" class="texto" onclick={() => editar(t)}>{t.texto}</button>
         {/if}
         {#if t.hecho && t.logrado}
-          <span class="logrado">✓ Logrado el {formatoFecha(t.logrado)}</span>
+          <span class="fecha logrado">✓ Logrado el {formatoFecha(t.logrado)}</span>
+        {:else if !t.hecho}
+          <span class="fecha">Creada el {formatoFecha(t.creado)}</span>
         {/if}
       </div>
       <button
@@ -232,11 +240,14 @@
     text-decoration: line-through;
     opacity: 0.55;
   }
-  .logrado {
+  .fecha {
     margin-top: 0.45rem;
     font-family: var(--bp-font-mono);
     font-size: 0.6rem;
     letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .fecha.logrado {
     color: #86efac;
   }
   textarea {

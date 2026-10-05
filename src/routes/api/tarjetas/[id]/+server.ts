@@ -5,7 +5,7 @@ import { tarjetas } from '$lib/server/db/schema';
 import { TARJETA_MAX, limpiarTexto } from '$lib/secciones';
 import type { RequestHandler } from './$types';
 
-const columnas = { id: tarjetas.id, texto: tarjetas.texto, hecho: tarjetas.hecho, logrado: tarjetas.logrado };
+const columnas = { id: tarjetas.id, texto: tarjetas.texto, hecho: tarjetas.hecho, logrado: tarjetas.logrado, creado: tarjetas.creado };
 
 // Edita el texto y/o la paloma de una tarjeta.
 export const PATCH: RequestHandler = async ({ params, request }) => {

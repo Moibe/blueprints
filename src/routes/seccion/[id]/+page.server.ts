@@ -13,7 +13,7 @@ export const load: PageServerLoad = ({ params }) => {
 	return {
 		seccion,
 		tarjetas: db
-			.select({ id: tarjetas.id, texto: tarjetas.texto, hecho: tarjetas.hecho, logrado: tarjetas.logrado })
+			.select({ id: tarjetas.id, texto: tarjetas.texto, hecho: tarjetas.hecho, logrado: tarjetas.logrado, creado: tarjetas.creado })
 			.from(tarjetas)
 			.where(eq(tarjetas.seccionId, id))
 			.orderBy(asc(tarjetas.id))
