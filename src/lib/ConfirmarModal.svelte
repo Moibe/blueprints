@@ -18,21 +18,30 @@
     onclose?: () => void;
   } = $props();
 
+  // Id único: puede haber más de una confirmación en la misma página.
+  const uid = $props.id();
   let dialog: HTMLDialogElement;
   let ocupado = $state(false);
+  let error = $state('');
   let pulsoEnFondo = false;
 
   $effect(() => {
-    if (open && !dialog.open) dialog.showModal();
-    else if (!open && dialog.open) dialog.close();
+    if (open && !dialog.open) {
+      error = '';
+      dialog.showModal();
+    } else if (!open && dialog.open) dialog.close();
   });
 
+  // Si la acción falla, el modal se queda abierto y muestra el porqué.
   async function confirmar() {
     if (ocupado) return;
     ocupado = true;
+    error = '';
     try {
       await onconfirmar();
       open = false;
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'No se pudo completar.';
     } finally {
       ocupado = false;
     }
@@ -43,7 +52,7 @@
 <dialog
   bind:this={dialog}
   class="modal"
-  aria-labelledby="confirmar-titulo"
+  aria-labelledby="{uid}-titulo"
   onclose={() => {
     open = false;
     onclose?.();
@@ -55,8 +64,11 @@
 >
   <div class="hoja">
     <span class="tag">Confirmar</span>
-    <h2 id="confirmar-titulo">{titulo}</h2>
+    <h2 id="{uid}-titulo">{titulo}</h2>
     <p class="detalle">{detalle}</p>
+    {#if error}
+      <p class="error" role="alert">{error}</p>
+    {/if}
     <div class="acciones">
       <button type="button" class="btn-sec" onclick={() => (open = false)}>Cancelar</button>
       <button type="button" class="btn-pri" disabled={ocupado} onclick={confirmar}>
@@ -116,6 +128,12 @@
     font-size: 0.74rem;
     line-height: 1.6;
     color: rgba(255, 255, 255, 0.75);
+  }
+  .error {
+    margin: 0.6rem 0 0;
+    font-family: var(--bp-font-mono);
+    font-size: 0.7rem;
+    color: #ffc9a8;
   }
   .acciones {
     display: flex;

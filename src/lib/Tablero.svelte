@@ -1,8 +1,11 @@
 <script lang="ts">
   // Área de dibujo de un objetivo: clic en el espacio vacío crea una tarea; clic en su texto
   // lo edita (Enter o clic fuera guarda, Escape cancela, dejarla vacía la borra); la paloma de
-  // la derecha la marca como completada.
+  // la derecha la marca como completada; clic derecho sobre ella la borra (con confirmación).
   import { untrack } from 'svelte';
+  import { flip } from 'svelte/animate';
+  import { scale } from 'svelte/transition';
+  import ConfirmarModal from '$lib/ConfirmarModal.svelte';
   import { TARJETA_MAX, limpiarTexto } from '$lib/secciones';
 
   // Fechas: Date desde el load, string ISO desde los endpoints (JSON).
@@ -169,6 +172,25 @@
       lista = lista.map((x) => (x.id === t.id ? t : x));
     }
   }
+
+  // Clic derecho sobre una tarea → confirmación para borrarla. Mientras se edita su texto se
+  // deja el menú normal del navegador (copiar, pegar, ortografía).
+  let porBorrar = $state<Tarjeta | null>(null);
+  function pedirBorrar(e: MouseEvent, t: Tarjeta) {
+    if (editando === t.id) return;
+    e.preventDefault();
+    porBorrar = t;
+  }
+  async function borrar() {
+    if (!porBorrar) return;
+    const id = porBorrar.id;
+    await api(`/api/tarjetas/${id}`, 'DELETE');
+    lista = lista.filter((t) => t.id !== id);
+  }
+
+  // Salida y reacomodo de tarjetas (sin animación si el sistema pide reducir movimiento).
+  const reducido =
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -181,6 +203,10 @@
       class:hecho={t.hecho}
       class:trazando={anim?.fase === 'trazo'}
       class:recien={anim?.fase === 'final'}
+      class:por-borrar={porBorrar?.id === t.id}
+      oncontextmenu={(e) => pedirBorrar(e, t)}
+      out:scale={{ duration: reducido ? 0 : 180, start: 0.85, opacity: 0 }}
+      animate:flip={{ duration: reducido ? 0 : 220 }}
     >
       {#if anim}
         <svg
@@ -238,6 +264,15 @@
   {/if}
 </div>
 
+<ConfirmarModal
+  open={porBorrar !== null}
+  titulo="¿Borrar esta tarea?"
+  detalle={porBorrar ? `«${porBorrar.texto}». No se puede deshacer.` : ''}
+  accion="Borrar tarea"
+  onconfirmar={borrar}
+  onclose={() => (porBorrar = null)}
+/>
+
 {#snippet campo()}
   <textarea
     use:enfocar
@@ -293,6 +328,13 @@
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
     cursor: default;
     transition: border-color 0.2s ease;
+  }
+  /* La tarjeta que se está por borrar (mientras la confirmación está abierta). */
+  .tarjeta.por-borrar {
+    border-color: #ffc9a8;
+    box-shadow:
+      0 0 0 1px rgba(255, 201, 168, 0.35),
+      0 0 16px rgba(255, 201, 168, 0.45);
   }
   .tarjeta.nueva {
     border-style: dashed;
