@@ -113,7 +113,6 @@
         renombrar={editable}
         etiquetaPlano="Siguiente objetivo"
         plano={siguiente}
-        hoja={codigo}
         {fecha}
       />
     {/key}

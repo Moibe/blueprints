@@ -91,7 +91,7 @@
       </ol>
     </div>
 
-    <Rotulo plano="Inicio" hoja="01 / 01" {fecha} />
+    <Rotulo plano="Inicio" {fecha} />
   </footer>
 </div>
 

@@ -4,21 +4,17 @@
   import EnLinea from '$lib/EnLinea.svelte';
 
   let {
-    hoja,
     fecha,
     etiquetaPlano = 'Plano',
     plano,
     renombrar,
-    escala = '1:50',
     proyecto = 'blueprints'
   }: {
-    hoja: string;
     fecha: string;
     /** Rótulo de la primera celda: "Plano" en la home, "Siguiente objetivo" en una sección. */
     etiquetaPlano?: string;
     plano: string;
     renombrar?: { max: number; onguardar: (valor: string) => Promise<string> };
-    escala?: string;
     proyecto?: string;
   } = $props();
 </script>
@@ -36,9 +32,7 @@
   </div>
   <div class="c-grid">
     <div><span class="k">{etiquetaPlano}</span><span class="v">{plano}</span></div>
-    <div><span class="k">Escala</span><span class="v">{escala}</span></div>
     <div><span class="k">Fecha</span><span class="v">{fecha}</span></div>
-    <div><span class="k">Hoja</span><span class="v">{hoja}</span></div>
   </div>
 </aside>
 
@@ -58,7 +52,6 @@
   }
   .c-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
   }
   .c-grid > div {
     display: flex;
@@ -66,11 +59,8 @@
     min-width: 0;
     padding: 0.4rem 0.7rem;
   }
-  .c-grid > div:nth-child(odd) {
-    border-right: 1px solid rgba(255, 255, 255, 0.6);
-  }
-  .c-grid > div:nth-child(-n + 2) {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+  .c-grid > div + div {
+    border-top: 1px solid rgba(255, 255, 255, 0.6);
   }
   .k {
     font-size: 0.58rem;
