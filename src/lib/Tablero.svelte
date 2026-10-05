@@ -1,11 +1,13 @@
 <script lang="ts">
   // Área de dibujo de un objetivo: clic en el espacio vacío crea una tarea; clic en su texto
   // lo edita (Enter o clic fuera guarda, Escape cancela, dejarla vacía la borra); la paloma de
-  // la derecha la marca como completada; clic derecho sobre ella la borra (con confirmación).
+  // la derecha la marca como completada; clic derecho abre un menú con "Eliminar" (que pide
+  // confirmación).
   import { untrack } from 'svelte';
   import { flip } from 'svelte/animate';
   import { scale } from 'svelte/transition';
   import ConfirmarModal from '$lib/ConfirmarModal.svelte';
+  import MenuContextual from '$lib/MenuContextual.svelte';
   import { TARJETA_MAX, limpiarTexto } from '$lib/secciones';
 
   // Fechas: Date desde el load, string ISO desde los endpoints (JSON).
@@ -173,13 +175,22 @@
     }
   }
 
-  // Clic derecho sobre una tarea → confirmación para borrarla. Mientras se edita su texto se
-  // deja el menú normal del navegador (copiar, pegar, ortografía).
+  // Clic derecho sobre una tarea → menú contextual → "Eliminar" → confirmación. Mientras se
+  // edita su texto se deja el menú normal del navegador (copiar, pegar, ortografía).
+  let menu = $state<{ x: number; y: number; tarjeta: Tarjeta } | null>(null);
   let porBorrar = $state<Tarjeta | null>(null);
-  function pedirBorrar(e: MouseEvent, t: Tarjeta) {
+  function abrirMenu(e: MouseEvent, t: Tarjeta) {
     if (editando === t.id) return;
     e.preventDefault();
-    porBorrar = t;
+    let x = e.clientX;
+    let y = e.clientY;
+    // Desde el teclado (tecla de menú o Shift+F10) no hay cursor: se abre sobre la tarjeta.
+    if (x === 0 && y === 0) {
+      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      x = r.left + 16;
+      y = r.top + 16;
+    }
+    menu = { x, y, tarjeta: t };
   }
   async function borrar() {
     if (!porBorrar) return;
@@ -203,8 +214,8 @@
       class:hecho={t.hecho}
       class:trazando={anim?.fase === 'trazo'}
       class:recien={anim?.fase === 'final'}
-      class:por-borrar={porBorrar?.id === t.id}
-      oncontextmenu={(e) => pedirBorrar(e, t)}
+      class:por-borrar={porBorrar?.id === t.id || menu?.tarjeta.id === t.id}
+      oncontextmenu={(e) => abrirMenu(e, t)}
       out:scale={{ duration: reducido ? 0 : 180, start: 0.85, opacity: 0 }}
       animate:flip={{ duration: reducido ? 0 : 220 }}
     >
@@ -263,6 +274,20 @@
     <span class="aviso">Clic aquí para agregar una tarea</span>
   {/if}
 </div>
+
+<!-- key: cada clic derecho monta un menú nuevo (y lo vuelve a posicionar). -->
+{#if menu}
+  {#key menu}
+    <MenuContextual
+      x={menu.x}
+      y={menu.y}
+      opciones={[
+        { etiqueta: 'Eliminar', icono: 'basura', peligro: true, accion: () => (porBorrar = menu?.tarjeta ?? null) }
+      ]}
+      oncerrar={() => (menu = null)}
+    />
+  {/key}
+{/if}
 
 <ConfirmarModal
   open={porBorrar !== null}
