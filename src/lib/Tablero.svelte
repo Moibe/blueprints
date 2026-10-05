@@ -1,9 +1,9 @@
 <script lang="ts">
   // Área de dibujo de un objetivo: clic en el espacio vacío crea una tarea; clic en su texto
   // lo edita (Enter o clic fuera guarda, Escape cancela, dejarla vacía la borra); la paloma de
-  // la derecha la marca como completada; clic derecho abre un menú con "Eliminar" (que pide
-  // confirmación).
-  import { untrack } from 'svelte';
+  // la derecha la marca como completada; clic derecho abre un menú con "Ver detalle" (voltea la
+  // tarjeta y muestra su ficha) y "Eliminar" (que pide confirmación).
+  import { tick, untrack } from 'svelte';
   import { flip } from 'svelte/animate';
   import { scale } from 'svelte/transition';
   import ConfirmarModal from '$lib/ConfirmarModal.svelte';
@@ -21,12 +21,28 @@
 
   const formatoFecha = (f: Date | string) =>
     new Date(f).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+  const hora = (f: Date | string) =>
+    new Date(f).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
+  // Tiempo entre dos fechas en palabras: "menos de un minuto", "25 min", "6 h", "3 días".
+  function duracion(desde: Date | string, hasta: Date | string | number) {
+    const min = Math.round((new Date(hasta).getTime() - new Date(desde).getTime()) / 60000);
+    if (min < 1) return 'menos de un minuto';
+    if (min < 60) return `${min} min`;
+    const h = Math.round(min / 60);
+    if (h < 24) return `${h} h`;
+    const d = Math.round(h / 24);
+    return d === 1 ? '1 día' : `${d} días`;
+  }
+
   let {
     objetivoId,
+    objetivo,
     tarjetas,
     oncambio
   }: {
     objetivoId: number;
+    /** Nombre del objetivo (para la ficha del reverso). */
+    objetivo: string;
     tarjetas: Tarjeta[];
     /** Avisa al padre de la lista actual de tareas (para el resumen y el siguiente objetivo). */
     oncambio?: (tarjetas: Tarjeta[]) => void;
@@ -175,8 +191,41 @@
     }
   }
 
-  // Clic derecho sobre una tarea → menú contextual → "Eliminar" → confirmación. Mientras se
-  // edita su texto se deja el menú normal del navegador (copiar, pegar, ortografía).
+  // "Ver detalle": la tarjeta gira sobre su eje vertical y muestra su ficha. El giro va en dos
+  // mitades y el contenido se cambia en la de en medio, con la tarjeta de canto (invisible):
+  // así no se nota el cambio de altura entre el frente y el reverso.
+  let tablero: HTMLDivElement;
+  let volteadas: Record<number, boolean> = $state({});
+  const girando = new Set<number>();
+  async function voltear(id: number) {
+    const tarjeta = tablero.querySelector<HTMLElement>(`[data-tarjeta="${id}"]`);
+    if (!tarjeta || girando.has(id)) return;
+    girando.add(id);
+    const sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (sinMovimiento) {
+      volteadas[id] = !volteadas[id];
+    } else {
+      const sale = tarjeta.animate(
+        [{ transform: 'perspective(900px) rotateY(0deg)' }, { transform: 'perspective(900px) rotateY(90deg)' }],
+        { duration: 180, easing: 'ease-in', fill: 'forwards' }
+      );
+      await sale.finished;
+      volteadas[id] = !volteadas[id];
+      await tick();
+      const entra = tarjeta.animate(
+        [{ transform: 'perspective(900px) rotateY(-90deg)' }, { transform: 'perspective(900px) rotateY(0deg)' }],
+        { duration: 240, easing: 'ease-out' }
+      );
+      sale.cancel();
+      await entra.finished;
+    }
+    girando.delete(id);
+    // El foco queda en el control del lado que se ve (útil con teclado).
+    tarjeta.querySelector<HTMLElement>(volteadas[id] ? '.volver' : '.texto')?.focus({ preventScroll: true });
+  }
+
+  // Clic derecho sobre una tarea → menú contextual (Ver detalle / Eliminar). Mientras se edita
+  // su texto se deja el menú normal del navegador (copiar, pegar, ortografía).
   let menu = $state<{ x: number; y: number; tarjeta: Tarjeta } | null>(null);
   let porBorrar = $state<Tarjeta | null>(null);
   function abrirMenu(e: MouseEvent, t: Tarjeta) {
@@ -206,15 +255,18 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
-<div class="tablero" onclick={nueva}>
+<div class="tablero" bind:this={tablero} onclick={nueva}>
   {#each lista as t (t.id)}
     {@const anim = animaciones[t.id]}
     <article
       class="tarjeta"
+      data-tarjeta={t.id}
       class:hecho={t.hecho}
       class:trazando={anim?.fase === 'trazo'}
       class:recien={anim?.fase === 'final'}
-      class:por-borrar={porBorrar?.id === t.id || menu?.tarjeta.id === t.id}
+      class:reverso={volteadas[t.id]}
+      class:con-menu={menu?.tarjeta.id === t.id}
+      class:por-borrar={porBorrar?.id === t.id}
       oncontextmenu={(e) => abrirMenu(e, t)}
       out:scale={{ duration: reducido ? 0 : 180, start: 0.85, opacity: 0 }}
       animate:flip={{ duration: reducido ? 0 : 220 }}
@@ -240,27 +292,54 @@
           <path class="chispa" d={anim.d} pathLength="1" />
         </svg>
       {/if}
-      <div class="cuerpo">
-        {#if editando === t.id}
-          {@render campo()}
-        {:else}
-          <button type="button" class="texto" onclick={() => editar(t)}>{t.texto}</button>
-        {/if}
-        {#if t.hecho && t.logrado}
-          <span class="fecha logrado">✓ Logrado el {formatoFecha(t.logrado)}</span>
-        {:else if !t.hecho}
-          <span class="fecha">Creada el {formatoFecha(t.creado)}</span>
-        {/if}
-      </div>
-      <button
-        type="button"
-        class="check"
-        aria-pressed={t.hecho}
-        aria-label={t.hecho ? 'Marcar como pendiente' : 'Marcar como completada'}
-        onclick={(e) => alternar(t, e.currentTarget.closest('article'))}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1" /></svg>
-      </button>
+      {#if volteadas[t.id]}
+        <!-- Reverso: la ficha de la tarea. -->
+        <div class="ficha">
+          <span class="ficha-titulo">Detalle</span>
+          <dl class="ficha-datos">
+            <dt>Creada</dt>
+            <dd>{@render fechaHora(t.creado)}</dd>
+            {#if t.hecho && t.logrado}
+              <dt>Lograda</dt>
+              <dd class="lograda">{@render fechaHora(t.logrado)}</dd>
+              <dt>Se logró en</dt>
+              <dd>{duracion(t.creado, t.logrado)}</dd>
+            {:else}
+              <dt>Estado</dt>
+              <dd>Pendiente</dd>
+              <dt>Antigüedad</dt>
+              <dd>{duracion(t.creado, Date.now())}</dd>
+            {/if}
+            <dt>Objetivo</dt>
+            <dd>{objetivo}</dd>
+          </dl>
+        </div>
+        <button type="button" class="volver" aria-label="Volver al frente" title="Volver al frente" onclick={() => voltear(t.id)}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg>
+        </button>
+      {:else}
+        <div class="cuerpo">
+          {#if editando === t.id}
+            {@render campo()}
+          {:else}
+            <button type="button" class="texto" onclick={() => editar(t)}>{t.texto}</button>
+          {/if}
+          {#if t.hecho && t.logrado}
+            <span class="fecha logrado">✓ Logrado el {formatoFecha(t.logrado)}</span>
+          {:else if !t.hecho}
+            <span class="fecha">Creada el {formatoFecha(t.creado)}</span>
+          {/if}
+        </div>
+        <button
+          type="button"
+          class="check"
+          aria-pressed={t.hecho}
+          aria-label={t.hecho ? 'Marcar como pendiente' : 'Marcar como completada'}
+          onclick={(e) => alternar(t, e.currentTarget.closest('article'))}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1" /></svg>
+        </button>
+      {/if}
     </article>
   {/each}
 
@@ -282,6 +361,9 @@
       x={menu.x}
       y={menu.y}
       opciones={[
+        volteadas[menu.tarjeta.id]
+          ? { etiqueta: 'Ver frente', icono: 'voltear', accion: () => menu && voltear(menu.tarjeta.id) }
+          : { etiqueta: 'Ver detalle', icono: 'info', accion: () => menu && voltear(menu.tarjeta.id) },
         { etiqueta: 'Eliminar', icono: 'basura', peligro: true, accion: () => (porBorrar = menu?.tarjeta ?? null) }
       ]}
       oncerrar={() => (menu = null)}
@@ -297,6 +379,11 @@
   onconfirmar={borrar}
   onclose={() => (porBorrar = null)}
 />
+
+<!-- Fecha y hora juntas; si no caben en un renglón, la hora baja completa (no se parte). -->
+{#snippet fechaHora(f: Date | string)}
+  <span class="nw">{formatoFecha(f)}</span> <span class="nw">· {hora(f)}</span>
+{/snippet}
 
 {#snippet campo()}
   <textarea
@@ -361,6 +448,90 @@
       0 0 0 1px rgba(255, 201, 168, 0.35),
       0 0 16px rgba(255, 201, 168, 0.45);
   }
+  /* La tarjeta con el menú contextual abierto: marco punteado neutro (el naranja es solo
+     para la confirmación de borrar). */
+  .tarjeta.con-menu {
+    outline: 1px dashed rgba(255, 255, 255, 0.75);
+    outline-offset: 3px;
+  }
+
+  /* Reverso: ficha técnica sobre papel cuadriculado. */
+  .tarjeta.reverso {
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px) -1px -1px / 12px 12px,
+      linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px) -1px -1px / 12px 12px,
+      rgba(7, 31, 79, 0.6);
+  }
+  .ficha {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .ficha-titulo {
+    font-family: var(--bp-font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .ficha-datos {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 0.6rem;
+    margin: 0;
+  }
+  .ficha-datos dt {
+    align-self: baseline;
+    font-family: var(--bp-font-mono);
+    font-size: 0.52rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .ficha-datos dd {
+    margin: 0;
+    font-family: var(--bp-font-mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.03em;
+    color: #fff;
+    overflow-wrap: anywhere;
+  }
+  .nw {
+    white-space: nowrap;
+  }
+  .ficha-datos dd.lograda {
+    color: #86efac;
+  }
+  /* Botón para regresar al frente, en el lugar donde va la paloma. Flota en la esquina para
+     que la ficha use todo el ancho de la tarjeta. */
+  .volver {
+    position: absolute;
+    top: 0.55rem;
+    right: 0.6rem;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(255, 255, 255, 0.6);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+  .volver:hover {
+    border: 1.5px solid #fff;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .volver:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
   .tarjeta.nueva {
     border-style: dashed;
   }

@@ -5,7 +5,13 @@
   // que lo cierra no llega a la página, como en un menú nativo.
   import { onMount } from 'svelte';
 
-  type Opcion = { etiqueta: string; icono?: 'basura'; peligro?: boolean; accion: () => void };
+  type Opcion = {
+    etiqueta: string;
+    icono?: 'basura' | 'info' | 'voltear';
+    /** Acción destructiva: va en naranja y separada de las anteriores por una línea. */
+    peligro?: boolean;
+    accion: () => void;
+  };
   let {
     x,
     y,
@@ -39,6 +45,13 @@
       if (e.key === 'Escape') {
         e.preventDefault();
         oncerrar();
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        // Flechas: recorren las opciones en círculo.
+        e.preventDefault();
+        const items = [...menu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')];
+        const i = items.indexOf(document.activeElement as HTMLButtonElement);
+        const paso = e.key === 'ArrowDown' ? 1 : -1;
+        items[(i + paso + items.length) % items.length]?.focus();
       }
     };
     const cerrar = () => oncerrar();
@@ -74,16 +87,25 @@
 </script>
 
 <div bind:this={menu} popover="manual" class="menu" role="menu" style="left: {x}px; top: {y}px;">
-  {#each opciones as o (o.etiqueta)}
+  {#each opciones as o, i (o.etiqueta)}
+    {#if o.peligro && i > 0}
+      <div class="separador" role="separator"></div>
+    {/if}
     <button type="button" role="menuitem" class="item" class:peligro={o.peligro} onclick={() => elegir(o)}>
-      {#if o.icono === 'basura'}
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        {#if o.icono === 'basura'}
           <path d="M3 6h18" />
           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
           <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
           <path d="M10 11v6M14 11v6" />
-        </svg>
-      {/if}
+        {:else if o.icono === 'info'}
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 16v-4.5M12 8h.01" />
+        {:else if o.icono === 'voltear'}
+          <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+          <path d="M3 3v5h5" />
+        {/if}
+      </svg>
       {o.etiqueta}
     </button>
   {/each}
@@ -113,6 +135,10 @@
       opacity: 0;
       transform: scale(0.96);
     }
+  }
+  .separador {
+    margin: 0.25rem 0.4rem;
+    border-top: 1px dashed rgba(255, 255, 255, 0.35);
   }
   .item {
     display: flex;

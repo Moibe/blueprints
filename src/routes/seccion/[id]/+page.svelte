@@ -136,6 +136,7 @@
       {#key objetivoActivo.id}
         <Tablero
           objetivoId={objetivoActivo.id}
+          objetivo={objetivoActivo.nombre}
           tarjetas={objetivoActivo.tarjetas}
           oncambio={(t) => tareasCambiaron(objetivoActivo.id, t)}
         />
