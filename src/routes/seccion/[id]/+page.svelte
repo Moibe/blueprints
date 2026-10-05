@@ -3,7 +3,8 @@
   import Encabezado from '$lib/Encabezado.svelte';
   import Rotulo from '$lib/Rotulo.svelte';
   import Tablero from '$lib/Tablero.svelte';
-  import { codigoHoja } from '$lib/secciones';
+  import { invalidateAll } from '$app/navigation';
+  import { NOMBRE_MAX, codigoHoja } from '$lib/secciones';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -25,19 +26,31 @@
       : `${total} ${total === 1 ? 'tarjeta' : 'tarjetas'} · ${logradas} ${logradas === 1 ? 'lograda' : 'logradas'}`
   );
 
-  // Guarda el objetivo editado en el rótulo; regresa el valor ya limpio que guardó el servidor.
-  async function guardarObjetivo(objetivo: string) {
+  // PATCH a la sección; regresa la sección guardada o lanza un Error con el mensaje del servidor.
+  async function actualizar(cambios: { nombre?: string; objetivo?: string }) {
     const res = await fetch(`/api/secciones/${data.seccion.id}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ objetivo })
+      body: JSON.stringify(cambios)
     });
-    const body: { error?: string; seccion?: { objetivo: string | null } } = await res
+    const body: { error?: string; seccion?: { nombre: string; objetivo: string | null } } = await res
       .json()
       .catch(() => ({}));
     if (!res.ok || !body.seccion) throw new Error(body.error ?? 'No se pudo guardar.');
-    return body.seccion.objetivo ?? '';
+    return body.seccion;
   }
+
+  async function guardarObjetivo(objetivo: string) {
+    return (await actualizar({ objetivo })).objetivo ?? '';
+  }
+
+  // El nombre aparece en el título, el rótulo, el sidebar y la pestaña: se recarga todo.
+  async function renombrar(nombre: string) {
+    const seccion = await actualizar({ nombre });
+    await invalidateAll();
+    return seccion.nombre;
+  }
+  const editable = { max: NOMBRE_MAX, onguardar: renombrar };
 </script>
 
 <svelte:head>
@@ -46,18 +59,20 @@
 
 <div class="sheet">
   <!-- Encabezado a la izquierda y cuadro de rotulación arriba a la derecha. -->
+  <!-- key: al pasar de una sección a otra se reinician (sin ediciones a medias). -->
   <div class="sheet-top">
-    <Encabezado
-      etiqueta="Plano {codigo} · Sección"
-      titulo={data.seccion.nombre}
-      {bajada}
-      cota="Hoja {codigo}"
-    />
-
-    <!-- key: al pasar de una sección a otra se reinicia el rótulo (sin edición a medias). -->
     {#key data.seccion.id}
+      <Encabezado
+        etiqueta="Plano {codigo} · Sección"
+        titulo={data.seccion.nombre}
+        {bajada}
+        cota="Hoja {codigo}"
+        {editable}
+      />
+
       <Rotulo
         proyecto={data.seccion.nombre}
+        renombrar={editable}
         objetivo={{ valor: data.seccion.objetivo, onguardar: guardarObjetivo }}
         hoja={codigo}
         {fecha}

@@ -1,7 +1,9 @@
 <script lang="ts">
   // Cuadro de rotulación, el de la esquina inferior derecha de un plano. La primera celda
   // muestra "Plano" (texto fijo) o, si se pasa `objetivo`, un "Objetivo" editable en el lugar:
-  // clic en la celda → campo; Enter o clic fuera guarda, Escape cancela.
+  // clic en la celda → campo; Enter o clic fuera guarda, Escape cancela. Con `renombrar`, el
+  // nombre del proyecto también se edita en el lugar.
+  import EnLinea from '$lib/EnLinea.svelte';
   import { OBJETIVO_MAX, limpiarTexto } from '$lib/secciones';
 
   let {
@@ -9,6 +11,7 @@
     fecha,
     plano = '',
     objetivo,
+    renombrar,
     escala = '1:50',
     proyecto = 'blueprints'
   }: {
@@ -16,6 +19,7 @@
     fecha: string;
     plano?: string;
     objetivo?: { valor: string | null; onguardar: (valor: string) => Promise<string> };
+    renombrar?: { max: number; onguardar: (valor: string) => Promise<string> };
     escala?: string;
     proyecto?: string;
   } = $props();
@@ -72,7 +76,13 @@
 <aside class="cartouche" aria-label="Cuadro de rotulación">
   <div class="c-head">
     <span class="k">Proyecto</span>
-    <span class="v hand">{proyecto}</span>
+    <span class="v hand">
+      {#if renombrar}
+        <EnLinea valor={proyecto} max={renombrar.max} etiqueta="Renombrar" onguardar={renombrar.onguardar} />
+      {:else}
+        {proyecto}
+      {/if}
+    </span>
   </div>
   <div class="c-grid">
     {#if objetivo}
@@ -86,7 +96,7 @@
               maxlength={OBJETIVO_MAX}
               rows="2"
               placeholder="¿Qué quieres lograr?"
-              disabled={guardando}
+              readonly={guardando}
               onkeydown={teclas}
               onblur={guardar}
             ></textarea>

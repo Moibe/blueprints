@@ -1,18 +1,33 @@
 <script lang="ts">
   // Encabezado de hoja: etiqueta técnica, título rotulado a mano, bajada y línea de cota.
+  // Con `editable`, el título se puede renombrar en el lugar (clic en él).
   import Cota from '$lib/Cota.svelte';
+  import EnLinea from '$lib/EnLinea.svelte';
 
   let {
     etiqueta,
     titulo,
     bajada,
-    cota
-  }: { etiqueta: string; titulo: string; bajada: string; cota: string } = $props();
+    cota,
+    editable
+  }: {
+    etiqueta: string;
+    titulo: string;
+    bajada: string;
+    cota: string;
+    editable?: { max: number; onguardar: (valor: string) => Promise<string> };
+  } = $props();
 </script>
 
 <header class="sheet-head">
   <span class="tag">{etiqueta}</span>
-  <h1>{titulo}</h1>
+  <h1>
+    {#if editable}
+      <EnLinea valor={titulo} max={editable.max} etiqueta="Renombrar" onguardar={editable.onguardar} />
+    {:else}
+      {titulo}
+    {/if}
+  </h1>
   <p class="lead">{bajada}</p>
   <Cota label={cota} />
 </header>
