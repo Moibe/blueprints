@@ -1,27 +1,31 @@
 <script lang="ts">
   // Barra lateral de plano con el mismo tilt 3D que la superior. Incluye el handle
   // para replegar/mostrar. Publica su ancho real a la variable CSS --sidebar-width
-  // para que el panel de contenido se ajuste solo. Items de ejemplo: reemplázalos.
+  // para que el panel de contenido se ajuste solo. Lista las secciones creadas con + Crear.
+  import { fly } from 'svelte/transition';
   import { page } from '$app/state';
+  import { codigoHoja } from '$lib/secciones';
 
   let {
     collapsed = false,
-    toggleCollapsed
+    toggleCollapsed,
+    secciones,
+    oncrear
   }: {
     collapsed?: boolean;
     toggleCollapsed: () => void;
+    secciones: { id: number; nombre: string }[];
+    oncrear: () => void;
   } = $props();
 
   let tiltX = $state(0);
   let tiltY = $state(0);
   let sidebarWidth = $state(240);
 
-  // Edita estos items por las secciones reales de tu app. `code` es la clave de hoja del plano.
-  const items = [
-    { href: '/', label: 'Sección uno', code: 'A-01' },
-    { href: '/seccion-dos', label: 'Sección dos', code: 'A-02' },
-    { href: '/seccion-tres', label: 'Sección tres', code: 'A-03' }
-  ];
+  // Cada sección es una hoja del plano: /seccion/<id>, con su clave A-01, A-02…
+  const items = $derived(
+    secciones.map((s) => ({ href: `/seccion/${s.id}`, label: s.nombre, code: codigoHoja(s.id) }))
+  );
 
   $effect(() => {
     if (typeof document !== 'undefined' && !collapsed) {
@@ -57,7 +61,7 @@
     onmousemove={handleMove}
     onmouseleave={handleLeave}
   >
-    <button type="button" class="create-btn">
+    <button type="button" class="create-btn" onclick={oncrear}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
       <span>Crear</span>
     </button>
@@ -66,11 +70,18 @@
 
     <nav>
       {#each items as it (it.href)}
-        <a href={it.href} class="nav-item" aria-current={page.url.pathname === it.href ? 'page' : undefined}>
+        <a
+          href={it.href}
+          class="nav-item"
+          aria-current={page.url.pathname === it.href ? 'page' : undefined}
+          in:fly={{ x: -10, duration: 220 }}
+        >
           <span class="nav-ico" aria-hidden="true"></span>
           <span class="nav-label">{it.label}</span>
           <span class="nav-code">{it.code}</span>
         </a>
+      {:else}
+        <p class="vacio">Aún no hay secciones.<br />Crea la primera con <strong>+ Crear</strong>.</p>
       {/each}
     </nav>
 
@@ -206,8 +217,28 @@
     background: rgba(255, 255, 255, 0.12);
     border: 1px solid rgba(255, 255, 255, 0.85);
   }
+  /* Nombres largos: el sidebar crece hasta su max-width y luego se cortan con "…". */
   .nav-label {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .vacio {
+    margin: 0.2rem 0 0;
+    padding: 0.9rem 0.8rem;
+    font-family: var(--bp-font-hand);
+    font-size: 0.98rem;
+    line-height: 1.45;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+  }
+  .vacio strong {
+    font-weight: 400;
+    color: #fff;
   }
   .nav-code {
     font-family: var(--bp-font-mono);

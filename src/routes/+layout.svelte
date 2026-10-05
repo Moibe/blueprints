@@ -2,15 +2,23 @@
   // Tailwind v4 + tokens de shadcn. El fondo de plano de :global(body) de abajo GANA:
   // los estilos :global de Svelte van sin @layer, así que pisan el @layer base de Tailwind.
   import '../app.css';
-  import type { Snippet } from 'svelte';
   import favicon from '$lib/assets/favicon.svg';
   import { onMount } from 'svelte';
-  import { afterNavigate } from '$app/navigation';
+  import { afterNavigate, goto, invalidate } from '$app/navigation';
   import TopNav from '$lib/TopNav.svelte';
   import Sidebar from '$lib/Sidebar.svelte';
+  import CrearSeccionModal from '$lib/CrearSeccionModal.svelte';
+  import type { LayoutProps } from './$types';
 
-  let { children }: { children: Snippet } = $props();
+  let { children, data }: LayoutProps = $props();
   let collapsed = $state(false);
+
+  // + Crear: al crear una sección, refresca la lista del sidebar y abre su hoja.
+  let crearAbierto = $state(false);
+  async function seccionCreada(id: number) {
+    await invalidate('app:secciones');
+    await goto(`/seccion/${id}`);
+  }
 
   // En móvil el sidebar flota encima del contenido (ver @media abajo): arranca replegado
   // y se vuelve a replegar al navegar para no tapar la página.
@@ -42,12 +50,13 @@
 </svelte:head>
 
 <TopNav />
-<Sidebar {collapsed} {toggleCollapsed} />
+<Sidebar {collapsed} {toggleCollapsed} secciones={data.secciones} oncrear={() => (crearAbierto = true)} />
 <main class={collapsed ? 'collapsed' : ''}>
   <div class="work-scroll">
     {@render children()}
   </div>
 </main>
+<CrearSeccionModal bind:open={crearAbierto} oncreada={seccionCreada} />
 
 <style>
   :global(:root) {

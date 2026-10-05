@@ -2,18 +2,21 @@
   // Hoja de EJEMPLO para ver el look de plano: rótulo, planta con cotas y cuadro de
   // rotulación. El chrome (navbar/sidebar + fondo de cianotipo) vive en el layout.
   // Reemplaza todo esto por el contenido real de tu app.
+  import Encabezado from '$lib/Encabezado.svelte';
+  import Rotulo from '$lib/Rotulo.svelte';
+
   const fecha = new Date()
     .toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
     .toUpperCase();
 </script>
 
 <div class="sheet">
-  <header class="sheet-head">
-    <span class="tag">Plano N.º 001 · Diseño general</span>
-    <h1>blueprints</h1>
-    <p class="lead">Lienzo en blanco: aquí van tus planes.</p>
-    <div class="dim" aria-hidden="true"><i></i><span>Lienzo · 100%</span><i></i></div>
-  </header>
+  <Encabezado
+    etiqueta="Plano N.º 001 · Diseño general"
+    titulo="blueprints"
+    bajada="Lienzo en blanco: aquí van tus planes."
+    cota="Lienzo · 100%"
+  />
 
   <figure class="plan">
     <svg viewBox="-6 -6 470 300" role="img" aria-label="Planta arquitectónica de ejemplo">
@@ -88,18 +91,7 @@
       </ol>
     </div>
 
-    <aside class="cartouche" aria-label="Cuadro de rotulación">
-      <div class="c-head">
-        <span class="k">Proyecto</span>
-        <span class="v hand">blueprints</span>
-      </div>
-      <div class="c-grid">
-        <div><span class="k">Plano</span><span class="v">Inicio</span></div>
-        <div><span class="k">Escala</span><span class="v">1:50</span></div>
-        <div><span class="k">Fecha</span><span class="v">{fecha}</span></div>
-        <div><span class="k">Hoja</span><span class="v">01 / 01</span></div>
-      </div>
-    </aside>
+    <Rotulo plano="Inicio" hoja="01 / 01" {fecha} />
   </footer>
 </div>
 
@@ -111,74 +103,6 @@
     gap: 1.25rem;
     padding: 0.5rem 0 0.25rem;
     box-sizing: border-box;
-  }
-
-  /* Rótulo: ancho al contenido, para que la cota mida lo mismo que el título. */
-  .sheet-head {
-    width: fit-content;
-    max-width: 100%;
-  }
-  .tag {
-    font-family: var(--bp-font-mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.65);
-  }
-  h1 {
-    margin: 0.35rem 0 0.15rem;
-    font-family: var(--bp-font-hand);
-    font-weight: 400;
-    font-size: clamp(2.6rem, 6vw, 3.8rem);
-    line-height: 1.05;
-    letter-spacing: 0.02em;
-    text-shadow: 0 0 14px rgba(255, 255, 255, 0.25);
-  }
-  .lead {
-    margin: 0 0 0.6rem;
-    font-family: var(--bp-font-hand);
-    font-size: 1.2rem;
-    color: rgba(255, 255, 255, 0.8);
-  }
-
-  /* Línea de cota: topes a los lados, flechas en los extremos y el texto al centro. */
-  .dim {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    height: 14px;
-    border-left: 1px solid rgba(255, 255, 255, 0.75);
-    border-right: 1px solid rgba(255, 255, 255, 0.75);
-  }
-  .dim i {
-    position: relative;
-    flex: 1;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.75);
-  }
-  .dim i::before {
-    content: '';
-    position: absolute;
-    top: -3px;
-    border-style: solid;
-  }
-  .dim i:first-child::before {
-    left: 0;
-    border-width: 3.5px 9px 3.5px 0;
-    border-color: transparent rgba(255, 255, 255, 0.9) transparent transparent;
-  }
-  .dim i:last-child::before {
-    right: 0;
-    border-width: 3.5px 0 3.5px 9px;
-    border-color: transparent transparent transparent rgba(255, 255, 255, 0.9);
-  }
-  .dim span {
-    font-family: var(--bp-font-mono);
-    font-size: 0.64rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.72);
-    white-space: nowrap;
   }
 
   /* Planta */
@@ -258,50 +182,5 @@
     margin: 0;
     padding-left: 1.3rem;
     list-style: decimal;
-  }
-
-  .cartouche {
-    min-width: 17rem;
-    border: 1.5px solid rgba(255, 255, 255, 0.9);
-    font-family: var(--bp-font-mono);
-    background: rgba(7, 31, 79, 0.25);
-  }
-  .c-head {
-    display: flex;
-    flex-direction: column;
-    padding: 0.45rem 0.7rem 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
-  }
-  .c-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-  .c-grid > div {
-    display: flex;
-    flex-direction: column;
-    padding: 0.4rem 0.7rem;
-  }
-  .c-grid > div:nth-child(odd) {
-    border-right: 1px solid rgba(255, 255, 255, 0.6);
-  }
-  .c-grid > div:nth-child(-n + 2) {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
-  }
-  .k {
-    font-size: 0.58rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.55);
-  }
-  .v {
-    font-size: 0.8rem;
-    letter-spacing: 0.06em;
-    color: #fff;
-  }
-  .v.hand {
-    font-family: var(--bp-font-hand);
-    font-size: 1.35rem;
-    letter-spacing: 0.03em;
-    line-height: 1.2;
   }
 </style>
