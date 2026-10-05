@@ -109,10 +109,17 @@
   .texto:hover {
     border-bottom-color: rgba(255, 255, 255, 0.5);
   }
-  .texto:hover::after {
+  /* El lápiz siempre ocupa su lugar (invisible) para que nada cambie de ancho al pasar el
+     mouse. */
+  .texto::after {
     content: ' ✎';
     font-size: 0.45em;
     vertical-align: middle;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .texto:hover::after,
+  .texto:focus-visible::after {
     opacity: 0.7;
   }
   .texto:focus-visible {

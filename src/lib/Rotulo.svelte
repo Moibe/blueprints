@@ -1,6 +1,6 @@
 <script lang="ts">
   // Cuadro de rotulación, el de la esquina inferior derecha de un plano. La primera celda
-  // muestra "Plano" (texto fijo) o, si se pasa `objetivo`, un "Objetivo" editable en el lugar:
+  // muestra "Plano" (texto fijo) o, si se pasa `objetivo`, un "Siguiente objetivo" editable en el lugar:
   // clic en la celda → campo; Enter o clic fuera guarda, Escape cancela. Con `renombrar`, el
   // nombre del proyecto también se edita en el lugar.
   import EnLinea from '$lib/EnLinea.svelte';
@@ -89,7 +89,7 @@
       <div class="celda-objetivo">
         {#if editando}
           <div class="edicion">
-            <span class="k">Objetivo</span>
+            <span class="k">Siguiente objetivo</span>
             <textarea
               use:enfocar
               bind:value={borrador}
@@ -108,7 +108,7 @@
           </div>
         {:else}
           <button type="button" class="editable" onclick={editar}>
-            <span class="k">Objetivo</span>
+            <span class="k">Siguiente objetivo</span>
             {#if mostrado}
               <span class="v">{mostrado}</span>
             {:else}
@@ -201,8 +201,16 @@
   .editable:hover {
     background: rgba(255, 255, 255, 0.07);
   }
-  .editable:hover .k::after {
+  /* El lápiz siempre ocupa su lugar (invisible) para que el cuadro no cambie de ancho al
+     pasar el mouse. */
+  .editable .k::after {
     content: ' ✎';
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .editable:hover .k::after,
+  .editable:focus-visible .k::after {
+    opacity: 1;
   }
   .editable:focus-visible {
     outline: 1px dashed #fff;
