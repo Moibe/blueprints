@@ -9,9 +9,21 @@
 
   const formatoFecha = (f: Date | string) =>
     new Date(f).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
-  let { seccionId, tarjetas }: { seccionId: number; tarjetas: Tarjeta[] } = $props();
+  let {
+    seccionId,
+    tarjetas,
+    oncambio
+  }: {
+    seccionId: number;
+    tarjetas: Tarjeta[];
+    /** Avisa al padre cuántas tarjetas hay y cuántas están logradas (para el resumen). */
+    oncambio?: (total: number, logradas: number) => void;
+  } = $props();
 
   let lista = $derived(tarjetas);
+  $effect(() => {
+    oncambio?.(lista.length, lista.filter((t) => t.hecho).length);
+  });
   let editando = $state<number | 'nueva' | null>(null);
   let borrador = $state('');
   let error = $state('');

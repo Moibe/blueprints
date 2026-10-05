@@ -15,6 +15,16 @@
       .toUpperCase()
   );
 
+  // Resumen bajo el título: "Hoja en blanco…" si no hay tarjetas, si no "3 tarjetas · 1 lograda".
+  // Arranca con lo que trajo el load y se actualiza en vivo con lo que reporta el tablero.
+  let total = $derived(data.tarjetas.length);
+  let logradas = $derived(data.tarjetas.filter((t) => t.hecho).length);
+  const bajada = $derived(
+    total === 0
+      ? 'Hoja en blanco: aquí va lo que planees para esta sección.'
+      : `${total} ${total === 1 ? 'tarjeta' : 'tarjetas'} · ${logradas} ${logradas === 1 ? 'lograda' : 'logradas'}`
+  );
+
   // Guarda el objetivo editado en el rótulo; regresa el valor ya limpio que guardó el servidor.
   async function guardarObjetivo(objetivo: string) {
     const res = await fetch(`/api/secciones/${data.seccion.id}`, {
@@ -40,7 +50,7 @@
     <Encabezado
       etiqueta="Plano {codigo} · Sección"
       titulo={data.seccion.nombre}
-      bajada="Hoja en blanco: aquí va lo que planees para esta sección."
+      {bajada}
       cota="Hoja {codigo}"
     />
 
@@ -56,7 +66,14 @@
   </div>
 
   {#key data.seccion.id}
-    <Tablero seccionId={data.seccion.id} tarjetas={data.tarjetas} />
+    <Tablero
+      seccionId={data.seccion.id}
+      tarjetas={data.tarjetas}
+      oncambio={(t, l) => {
+        total = t;
+        logradas = l;
+      }}
+    />
   {/key}
 </div>
 
