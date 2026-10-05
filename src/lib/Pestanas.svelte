@@ -22,6 +22,9 @@
     onborrar: (id: number) => void;
   } = $props();
 
+  // Conteo de tareas de la pestaña: sin tareas no se muestra nada; con tareas, 'logradas de total'.
+  const conteo = (o: Pestana) => (o.total === 0 ? '' : o.logradas === 0 ? `${o.total}` : `${o.logradas} de ${o.total}`);
+
   let creando = $state(false);
   let borrador = $state('');
   let error = $state('');
@@ -76,7 +79,7 @@
         <span class="nombre">
           <EnLinea valor={o.nombre} max={OBJETIVO_MAX} etiqueta="Renombrar objetivo" onguardar={(v) => onrenombrar(o.id, v)} />
         </span>
-        <span class="conteo" class:completo={o.total > 0 && o.logradas === o.total}>{o.logradas}/{o.total}</span>
+        <span class="conteo" class:completo={o.total > 0 && o.logradas === o.total} title="Tareas logradas">{conteo(o)}</span>
         <button type="button" class="borrar" aria-label="Borrar objetivo" onclick={() => onborrar(o.id)}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
         </button>
@@ -84,7 +87,7 @@
     {:else}
       <button type="button" class="pestana" role="tab" aria-selected="false" onclick={() => onactivar(o.id)}>
         <span class="nombre">{o.nombre}</span>
-        <span class="conteo" class:completo={o.total > 0 && o.logradas === o.total}>{o.logradas}/{o.total}</span>
+        <span class="conteo" class:completo={o.total > 0 && o.logradas === o.total} title="Tareas logradas">{conteo(o)}</span>
       </button>
     {/if}
   {/each}
@@ -162,9 +165,15 @@
   .conteo {
     flex-shrink: 0;
     font-family: var(--bp-font-mono);
-    font-size: 0.6rem;
-    letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    /* Cero sin rayita: a este tamaño el de JetBrains Mono se confunde con un 8. */
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'zero' 0;
+    color: rgba(255, 255, 255, 0.55);
+  }
+  .conteo:empty {
+    display: none;
   }
   .conteo.completo {
     color: #f5c542;
