@@ -15,7 +15,7 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 
 	if (typeof body?.texto === 'string') {
 		const texto = limpiarTexto(body.texto);
-		if (!texto) return json({ error: 'La tarjeta necesita texto.' }, { status: 400 });
+		if (!texto) return json({ error: 'La tarea necesita texto.' }, { status: 400 });
 		if (texto.length > TARJETA_MAX) {
 			return json({ error: `Hasta ${TARJETA_MAX} caracteres.` }, { status: 400 });
 		}
@@ -30,7 +30,7 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 	}
 
 	const tarjeta = db.update(tarjetas).set(cambios).where(eq(tarjetas.id, id)).returning(columnas).get();
-	if (!tarjeta) return json({ error: 'Esa tarjeta no existe.' }, { status: 404 });
+	if (!tarjeta) return json({ error: 'Esa tarea no existe.' }, { status: 404 });
 	return json({ tarjeta });
 };
 
@@ -38,6 +38,6 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 export const DELETE: RequestHandler = ({ params }) => {
 	const id = Number(params.id);
 	const borrada = Number.isInteger(id) && db.delete(tarjetas).where(eq(tarjetas.id, id)).run().changes > 0;
-	if (!borrada) return json({ error: 'Esa tarjeta no existe.' }, { status: 404 });
+	if (!borrada) return json({ error: 'Esa tarea no existe.' }, { status: 404 });
 	return json({ ok: true });
 };

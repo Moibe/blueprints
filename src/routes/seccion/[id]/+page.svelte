@@ -1,8 +1,11 @@
 <script lang="ts">
-  // Hoja de una sección creada con + Crear: encabezado, rótulo y tablero de tarjetas.
+  // Hoja de una sección (proyecto): encabezado, rótulo, pestañas de objetivos y el tablero de
+  // tareas del objetivo activo.
   import Encabezado from '$lib/Encabezado.svelte';
   import Rotulo from '$lib/Rotulo.svelte';
+  import Pestanas from '$lib/Pestanas.svelte';
   import Tablero from '$lib/Tablero.svelte';
+  import ConfirmarModal from '$lib/ConfirmarModal.svelte';
   import { invalidateAll } from '$app/navigation';
   import { NOMBRE_MAX, codigoHoja } from '$lib/secciones';
   import type { PageProps } from './$types';
@@ -16,41 +19,77 @@
       .toUpperCase()
   );
 
-  // Resumen bajo el título: "Hoja en blanco…" si no hay tarjetas, si no "3 tarjetas · 1 lograda".
-  // Arranca con lo que trajo el load y se actualiza en vivo con lo que reporta el tablero.
-  let total = $derived(data.tarjetas.length);
-  let logradas = $derived(data.tarjetas.filter((t) => t.hecho).length);
+  // Copia local de los objetivos (con sus tareas) para reflejar cambios sin recargar. Las fechas
+  // llegan como Date desde el load y como string ISO desde los endpoints (JSON).
+  type Tarjeta = { id: number; texto: string; hecho: boolean; logrado: Date | string | null; creado: Date | string };
+  type Objetivo = { id: number; nombre: string; tarjetas: Tarjeta[] };
+  let objetivos = $derived<Objetivo[]>(data.objetivos);
+  let activo = $state<number | null>(null);
+  // Al entrar a otra sección, o si el activo desapareció, se activa el primero.
+  $effect(() => {
+    if (activo === null || !objetivos.some((o) => o.id === activo)) activo = objetivos[0]?.id ?? null;
+  });
+  const objetivoActivo = $derived(objetivos.find((o) => o.id === activo) ?? null);
+
+  const total = $derived(objetivos.reduce((n, o) => n + o.tarjetas.length, 0));
+  const logradas = $derived(objetivos.reduce((n, o) => n + o.tarjetas.filter((t) => t.hecho).length, 0));
+  const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
   const bajada = $derived(
-    total === 0
-      ? 'Hoja en blanco: aquí va lo que planees para esta sección.'
-      : `${total} ${total === 1 ? 'tarjeta' : 'tarjetas'} · ${logradas} ${logradas === 1 ? 'lograda' : 'logradas'}`
+    objetivos.length === 0
+      ? 'Hoja en blanco: crea el primer objetivo de esta sección.'
+      : `${plural(objetivos.length, 'objetivo', 'objetivos')} · ${plural(total, 'tarea', 'tareas')} · ${plural(logradas, 'lograda', 'logradas')}`
+  );
+  // Siguiente objetivo: el primero que aún no esté completo (sin tareas cuenta como pendiente).
+  const siguiente = $derived(
+    objetivos.find((o) => o.tarjetas.length === 0 || o.tarjetas.some((t) => !t.hecho))?.nombre ??
+      (objetivos.length ? 'Todo logrado ✓' : '—')
   );
 
-  // PATCH a la sección; regresa la sección guardada o lanza un Error con el mensaje del servidor.
-  async function actualizar(cambios: { nombre?: string; objetivo?: string }) {
-    const res = await fetch(`/api/secciones/${data.seccion.id}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(cambios)
+  async function api(url: string, method: string, body?: object) {
+    const res = await fetch(url, {
+      method,
+      headers: body ? { 'content-type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined
     });
-    const body: { error?: string; seccion?: { nombre: string; objetivo: string | null } } = await res
-      .json()
-      .catch(() => ({}));
-    if (!res.ok || !body.seccion) throw new Error(body.error ?? 'No se pudo guardar.');
-    return body.seccion;
-  }
-
-  async function guardarObjetivo(objetivo: string) {
-    return (await actualizar({ objetivo })).objetivo ?? '';
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error ?? 'No se pudo guardar.');
+    return data;
   }
 
   // El nombre aparece en el título, el rótulo, el sidebar y la pestaña: se recarga todo.
   async function renombrar(nombre: string) {
-    const seccion = await actualizar({ nombre });
+    const { seccion } = await api(`/api/secciones/${data.seccion.id}`, 'PATCH', { nombre });
     await invalidateAll();
-    return seccion.nombre;
+    return seccion.nombre as string;
   }
   const editable = { max: NOMBRE_MAX, onguardar: renombrar };
+
+  async function crearObjetivo(nombre: string) {
+    const { objetivo } = await api(`/api/secciones/${data.seccion.id}/objetivos`, 'POST', { nombre });
+    objetivos = [...objetivos, objetivo];
+    activo = objetivo.id;
+  }
+  async function renombrarObjetivo(id: number, nombre: string) {
+    const { objetivo } = await api(`/api/objetivos/${id}`, 'PATCH', { nombre });
+    objetivos = objetivos.map((o) => (o.id === id ? { ...o, nombre: objetivo.nombre } : o));
+    return objetivo.nombre as string;
+  }
+
+  let porBorrar = $state<{ id: number; nombre: string; tareas: number } | null>(null);
+  function pedirBorrar(id: number) {
+    const o = objetivos.find((x) => x.id === id);
+    if (o) porBorrar = { id, nombre: o.nombre, tareas: o.tarjetas.length };
+  }
+  async function borrarObjetivo() {
+    if (!porBorrar) return;
+    await api(`/api/objetivos/${porBorrar.id}`, 'DELETE');
+    objetivos = objetivos.filter((o) => o.id !== porBorrar!.id);
+  }
+
+  function tareasCambiaron(id: number, tarjetas: Tarjeta[]) {
+    if (objetivos.find((o) => o.id === id)?.tarjetas === tarjetas) return;
+    objetivos = objetivos.map((o) => (o.id === id ? { ...o, tarjetas } : o));
+  }
 </script>
 
 <svelte:head>
@@ -58,7 +97,6 @@
 </svelte:head>
 
 <div class="sheet">
-  <!-- Encabezado a la izquierda y cuadro de rotulación arriba a la derecha. -->
   <!-- key: al pasar de una sección a otra se reinician (sin ediciones a medias). -->
   <div class="sheet-top">
     {#key data.seccion.id}
@@ -73,24 +111,55 @@
       <Rotulo
         proyecto={data.seccion.nombre}
         renombrar={editable}
-        objetivo={{ valor: data.seccion.objetivo, onguardar: guardarObjetivo }}
+        etiquetaPlano="Siguiente objetivo"
+        plano={siguiente}
         hoja={codigo}
         {fecha}
       />
     {/key}
   </div>
 
-  {#key data.seccion.id}
-    <Tablero
-      seccionId={data.seccion.id}
-      tarjetas={data.tarjetas}
-      oncambio={(t, l) => {
-        total = t;
-        logradas = l;
-      }}
+  <div class="trabajo">
+    <Pestanas
+      objetivos={objetivos.map((o) => ({
+        id: o.id,
+        nombre: o.nombre,
+        total: o.tarjetas.length,
+        logradas: o.tarjetas.filter((t) => t.hecho).length
+      }))}
+      {activo}
+      onactivar={(id) => (activo = id)}
+      oncrear={crearObjetivo}
+      onrenombrar={renombrarObjetivo}
+      onborrar={pedirBorrar}
     />
-  {/key}
+
+    {#if objetivoActivo}
+      {#key objetivoActivo.id}
+        <Tablero
+          objetivoId={objetivoActivo.id}
+          tarjetas={objetivoActivo.tarjetas}
+          oncambio={(t) => tareasCambiaron(objetivoActivo.id, t)}
+        />
+      {/key}
+    {:else}
+      <div class="sin-objetivos">
+        <span>Sin objetivos todavía · usa <strong>+ Objetivo</strong> para empezar</span>
+      </div>
+    {/if}
+  </div>
 </div>
+
+<ConfirmarModal
+  open={porBorrar !== null}
+  titulo="¿Borrar «{porBorrar?.nombre ?? ''}»?"
+  detalle={porBorrar?.tareas
+    ? `Se borran también sus ${porBorrar.tareas} ${porBorrar.tareas === 1 ? 'tarea' : 'tareas'}. No se puede deshacer.`
+    : 'Este objetivo no tiene tareas. No se puede deshacer.'}
+  accion="Borrar objetivo"
+  onconfirmar={borrarObjetivo}
+  onclose={() => (porBorrar = null)}
+/>
 
 <style>
   .sheet {
@@ -109,5 +178,29 @@
     justify-content: space-between;
     gap: 1.5rem;
     flex-wrap: wrap;
+  }
+
+  .trabajo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .sin-objetivos {
+    flex: 1;
+    min-height: 14rem;
+    display: grid;
+    place-items: center;
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    font-family: var(--bp-font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+  }
+  .sin-objetivos strong {
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.8);
   }
 </style>

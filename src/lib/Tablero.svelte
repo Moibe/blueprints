@@ -1,7 +1,8 @@
 <script lang="ts">
-  // Área de dibujo de una sección: clic en el espacio vacío crea una tarjeta; clic en su texto
+  // Área de dibujo de un objetivo: clic en el espacio vacío crea una tarea; clic en su texto
   // lo edita (Enter o clic fuera guarda, Escape cancela, dejarla vacía la borra); la paloma de
   // la derecha la marca como completada.
+  import { untrack } from 'svelte';
   import { TARJETA_MAX, limpiarTexto } from '$lib/secciones';
 
   // Fechas: Date desde el load, string ISO desde los endpoints (JSON).
@@ -16,19 +17,22 @@
   const formatoFecha = (f: Date | string) =>
     new Date(f).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
   let {
-    seccionId,
+    objetivoId,
     tarjetas,
     oncambio
   }: {
-    seccionId: number;
+    objetivoId: number;
     tarjetas: Tarjeta[];
-    /** Avisa al padre cuántas tarjetas hay y cuántas están logradas (para el resumen). */
-    oncambio?: (total: number, logradas: number) => void;
+    /** Avisa al padre de la lista actual de tareas (para el resumen y el siguiente objetivo). */
+    oncambio?: (tarjetas: Tarjeta[]) => void;
   } = $props();
 
   let lista = $derived(tarjetas);
+  // untrack: el callback del padre puede cambiar de identidad en cada render; si el efecto lo
+  // rastreara, se dispararía en bucle.
   $effect(() => {
-    oncambio?.(lista.length, lista.filter((t) => t.hecho).length);
+    const actual = lista;
+    untrack(() => oncambio?.(actual));
   });
   let editando = $state<number | 'nueva' | null>(null);
   let borrador = $state('');
@@ -73,7 +77,7 @@
     try {
       if (cual === 'nueva') {
         if (texto) {
-          const { tarjeta } = await api(`/api/secciones/${seccionId}/tarjetas`, 'POST', { texto });
+          const { tarjeta } = await api(`/api/objetivos/${objetivoId}/tarjetas`, 'POST', { texto });
           lista = [...lista, tarjeta];
         }
       } else if (!texto) {
@@ -230,7 +234,7 @@
   {/if}
 
   {#if lista.length === 0 && editando === null}
-    <span class="aviso">Clic aquí para agregar una tarjeta</span>
+    <span class="aviso">Clic aquí para agregar una tarea</span>
   {/if}
 </div>
 
@@ -240,7 +244,7 @@
     bind:value={borrador}
     maxlength={TARJETA_MAX}
     rows="2"
-    placeholder="Escribe la tarjeta…"
+    placeholder="Escribe la tarea…"
     onkeydown={teclas}
     onblur={guardar}
   ></textarea>
