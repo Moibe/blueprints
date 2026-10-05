@@ -103,9 +103,8 @@
       {#if error}<span class="error" role="alert">{error}</span>{/if}
     </div>
   {:else}
-    <button type="button" class="pestana agregar" onclick={abrirNuevo}>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-      Objetivo
+    <button type="button" class="pestana agregar" aria-label="Agregar objetivo" title="Agregar objetivo" onclick={abrirNuevo}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
     </button>
   {/if}
 </div>
@@ -188,8 +187,12 @@
     color: #ffc9a8;
     background: rgba(255, 201, 168, 0.15);
   }
+  /* Solo el "+": misma altura que las otras pestañas, más angosta. */
   .agregar {
-    gap: 0.35rem;
+    align-self: stretch;
+    justify-content: center;
+    min-width: 2.4rem;
+    padding: 0.45rem 0.6rem;
     color: rgba(255, 255, 255, 0.6);
   }
   .pestana.nueva {

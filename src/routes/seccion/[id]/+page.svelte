@@ -142,7 +142,7 @@
       {/key}
     {:else}
       <div class="sin-objetivos">
-        <span>Sin objetivos todavía · usa <strong>+ Objetivo</strong> para empezar</span>
+        <span>Sin objetivos todavía · usa <strong>+</strong> para crear el primero</span>
       </div>
     {/if}
   </div>
