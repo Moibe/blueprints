@@ -5,7 +5,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (!authActiva()) return resolve(event);
 
 	event.locals.autenticado = sesionValida(event.cookies.get(COOKIE));
-	if (event.locals.autenticado || event.url.pathname === '/login') return resolve(event);
+	// /logout pasa sin sesión: un "Salir" con la cookie ya vencida debe llevar al login, no a un 401.
+	const publica = event.url.pathname === '/login' || event.url.pathname === '/logout';
+	if (event.locals.autenticado || publica) return resolve(event);
 
 	// Sin sesión: la API responde 401; las páginas mandan al login.
 	if (event.url.pathname.startsWith('/api/')) {

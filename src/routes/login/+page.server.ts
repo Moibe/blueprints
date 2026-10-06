@@ -23,7 +23,14 @@ export const actions: Actions = {
 		if (!authConfigurada()) {
 			return fail(500, { error: 'Falta ADMIN_PASSWORD en el servidor.' });
 		}
-		const ip = getClientAddress();
+		// Con ADDRESS_HEADER configurado y el header ausente (p. ej. `npm start` sin nginx),
+		// adapter-node lanza: en ese caso el freno cuenta todo como una sola IP.
+		let ip = 'desconocida';
+		try {
+			ip = getClientAddress();
+		} catch {
+			/* sin header de proxy */
+		}
 		if (bloqueado(ip)) {
 			return fail(429, { error: 'Demasiados intentos. Espera unos minutos.' });
 		}
