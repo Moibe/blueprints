@@ -330,7 +330,8 @@
     height: calc(1lh + 0.9rem + 2px);
     justify-content: center;
     min-width: 2.4rem;
-    margin-left: 0.2rem;
+    /* Hasta la derecha, en la esquina del tablero. */
+    margin-left: auto;
     padding: 0.45rem 0.6rem;
     color: rgba(255, 255, 255, 0.6);
     background: rgba(255, 255, 255, 0.03);
