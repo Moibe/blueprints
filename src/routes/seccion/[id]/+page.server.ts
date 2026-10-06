@@ -20,14 +20,15 @@ export const load: PageServerLoad = ({ params }) => {
 
 	return {
 		seccion,
-		// Cada objetivo con sus tareas, en orden de creación.
+		// Cada objetivo con sus tareas, como quedaron acomodadas en el tablero (las que nunca se
+		// han arrastrado comparten orden 0 y se desempatan por id: el orden en que se crearon).
 		objetivos: lista.map((o) => ({
 			...o,
 			tarjetas: db
 				.select({ id: tarjetas.id, texto: tarjetas.texto, hecho: tarjetas.hecho, logrado: tarjetas.logrado, creado: tarjetas.creado })
 				.from(tarjetas)
 				.where(eq(tarjetas.objetivoId, o.id))
-				.orderBy(asc(tarjetas.id))
+				.orderBy(asc(tarjetas.orden), asc(tarjetas.id))
 				.all()
 		}))
 	};

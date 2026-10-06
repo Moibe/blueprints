@@ -2,7 +2,8 @@
   // Área de dibujo de un objetivo: clic en el espacio vacío crea una tarea; clic en su texto
   // lo edita (Enter o clic fuera guarda, Escape cancela, dejarla vacía la borra); la paloma de
   // la derecha la marca como completada; clic derecho abre un menú con "Ver detalle" (voltea la
-  // tarjeta y muestra su ficha) y "Eliminar" (que pide confirmación).
+  // tarjeta y muestra su ficha) y "Eliminar" (que pide confirmación). Las tarjetas se reacomodan
+  // arrastrándolas (o con Alt + ← →) y ese orden se guarda.
   import { tick, untrack } from 'svelte';
   import { flip } from 'svelte/animate';
   import { scale } from 'svelte/transition';
@@ -252,13 +253,100 @@
   // Salida y reacomodo de tarjetas (sin animación si el sistema pide reducir movimiento).
   const reducido =
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Reordenar arrastrando: mientras se mueve, la tarjeta se va reacomodando en la lista (de ahí
+  // que las demás se deslicen solas, por animate:flip) y al soltar se guarda el orden. Si el
+  // arrastre se cancela (Escape) o el guardado falla, el tablero vuelve a como estaba.
+  let arrastrando = $state<number | null>(null);
+  let ordenPrevio: Tarjeta[] = [];
+
+  function tomar(e: DragEvent, t: Tarjeta) {
+    // Mientras se edita, se voltea o le da la vuelta la chispa, la tarjeta no se arrastra.
+    if (editando !== null || volteadas[t.id] || animaciones[t.id]) {
+      e.preventDefault();
+      return;
+    }
+    arrastrando = t.id;
+    ordenPrevio = lista;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      // Firefox no arranca el arrastre sin datos.
+      e.dataTransfer.setData('text/plain', String(t.id));
+    }
+  }
+
+  // Coloca la tarjeta que se arrastra antes o después de la de abajo del cursor, según de qué
+  // lado va. Comparar contra la mitad evita que se columpie entre dos lugares.
+  function pasarPor(e: DragEvent, t: Tarjeta) {
+    if (arrastrando === null || t.id === arrastrando) return;
+    e.preventDefault();
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const movida = lista.find((x) => x.id === arrastrando);
+    if (!movida) return;
+    const resto = lista.filter((x) => x.id !== arrastrando);
+    let hasta = resto.findIndex((x) => x.id === t.id);
+    if (e.clientX > r.left + r.width / 2) hasta++;
+    acomodar([...resto.slice(0, hasta), movida, ...resto.slice(hasta)]);
+  }
+
+  // Soltar en el espacio vacío del tablero: al final.
+  function pasarPorElFinal(e: DragEvent) {
+    if (arrastrando === null) return;
+    e.preventDefault();
+    if (e.target !== e.currentTarget) return;
+    const movida = lista.find((x) => x.id === arrastrando);
+    if (movida) acomodar([...lista.filter((x) => x.id !== arrastrando), movida]);
+  }
+
+  function acomodar(nueva: Tarjeta[]) {
+    if (nueva.every((t, i) => t.id === lista[i].id)) return;
+    lista = nueva;
+  }
+
+  async function soltar(e: DragEvent) {
+    if (arrastrando === null) return;
+    arrastrando = null;
+    const previo = ordenPrevio;
+    // Arrastre cancelado (Escape o soltar fuera del tablero): se queda como estaba.
+    if (e.dataTransfer?.dropEffect === 'none') {
+      lista = previo;
+      return;
+    }
+    const orden = lista.map((t) => t.id);
+    if (orden.every((id, i) => id === previo[i]?.id)) return;
+    try {
+      await api(`/api/objetivos/${objetivoId}/tarjetas`, 'PATCH', { orden });
+    } catch {
+      lista = previo;
+    }
+  }
+
+  // Sin mouse: Alt + ← → mueve la tarjeta que tiene el foco.
+  async function mover(e: KeyboardEvent, t: Tarjeta) {
+    if (!e.altKey || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || editando !== null) return;
+    e.preventDefault();
+    const desde = lista.findIndex((x) => x.id === t.id);
+    const hasta = desde + (e.key === 'ArrowLeft' ? -1 : 1);
+    if (hasta < 0 || hasta >= lista.length) return;
+    const previo = lista;
+    const nueva = [...lista];
+    [nueva[desde], nueva[hasta]] = [nueva[hasta], nueva[desde]];
+    lista = nueva;
+    try {
+      await api(`/api/objetivos/${objetivoId}/tarjetas`, 'PATCH', { orden: nueva.map((x) => x.id) });
+    } catch {
+      lista = previo;
+    }
+  }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
-<div class="tablero" bind:this={tablero} onclick={nueva}>
+<div class="tablero" bind:this={tablero} onclick={nueva} ondragover={pasarPorElFinal}>
   {#each lista as t (t.id)}
     {@const anim = animaciones[t.id]}
+    <!-- Alt + ← → es un atajo extra sobre los botones de la tarjeta, que sí son enfocables. -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <article
       class="tarjeta"
       data-tarjeta={t.id}
@@ -268,6 +356,12 @@
       class:reverso={volteadas[t.id]}
       class:con-menu={menu?.tarjeta.id === t.id}
       class:por-borrar={porBorrar?.id === t.id}
+      class:arrastrando={arrastrando === t.id}
+      draggable={editando !== t.id}
+      ondragstart={(e) => tomar(e, t)}
+      ondragover={(e) => pasarPor(e, t)}
+      ondragend={soltar}
+      onkeydown={(e) => mover(e, t)}
       oncontextmenu={(e) => abrirMenu(e, t)}
       out:scale={{ duration: reducido ? 0 : 180, start: 0.85, opacity: 0 }}
       animate:flip={{ duration: reducido ? 0 : 220 }}
@@ -421,8 +515,15 @@
     border-radius: 6px;
     background: rgba(7, 31, 79, 0.45);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-    cursor: default;
+    /* Se arrastra para reacomodarla. */
+    cursor: grab;
     transition: border-color 0.2s ease;
+  }
+  /* La que va en la mano: se transparenta para que se vea el hueco a donde va a caer. */
+  .tarjeta.arrastrando {
+    cursor: grabbing;
+    opacity: 0.4;
+    border-style: dashed;
   }
   /* La tarjeta que se está por borrar (mientras la confirmación está abierta). */
   .tarjeta.por-borrar {

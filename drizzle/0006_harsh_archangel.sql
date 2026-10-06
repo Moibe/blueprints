@@ -1,0 +1,1 @@
+ALTER TABLE `tarjetas` ADD `orden` integer DEFAULT 0 NOT NULL;

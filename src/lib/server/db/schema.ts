@@ -33,6 +33,9 @@ export const tarjetas = sqliteTable('tarjetas', {
 		.notNull()
 		.references(() => objetivos.id, { onDelete: 'cascade' }),
 	texto: text('texto').notNull(),
+	// Posición en el tablero: se reacomoda arrastrando las tarjetas. Las de antes quedaron en 0
+	// y se desempatan por id, así que conservan el orden en que se crearon.
+	orden: integer('orden').notNull().default(0),
 	hecho: integer('hecho', { mode: 'boolean' }).notNull().default(false),
 	// Cuándo se palomeó; null mientras está pendiente.
 	logrado: integer('logrado', { mode: 'timestamp' }),
