@@ -1,7 +1,8 @@
 <script lang="ts">
   // Objetivos como una pila de hojas sobre el área de dibujo: se ve uno a la vez (las demás
-  // asoman detrás) y se recorren con las flechas ‹ › o con ← → del teclado. La hoja del frente
-  // muestra su nombre (editable en el lugar), su avance de tareas y el botón para borrarla;
+  // asoman detrás) y se recorren con las flechas ‹ › de sus orillas o con ← → del teclado. La
+  // hoja del frente muestra su nombre (editable en el lugar), su avance de tareas y el botón
+  // para borrarla;
   // "+" crea un objetivo escribiendo su nombre ahí mismo (Enter crea, Escape cancela).
   import { fly } from 'svelte/transition';
   import EnLinea from '$lib/EnLinea.svelte';
@@ -120,27 +121,31 @@
     </div>
   {:else}
     {#if actual}
-      <button type="button" class="flecha" aria-label="Objetivo anterior" title="Objetivo anterior" aria-disabled={indice <= 0} onclick={() => ir(-1)}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
-      </button>
-
-      <div class="hojas" class:capa1={capas >= 1} class:capa2={capas >= 2} aria-live="polite">
-        {#key actual.id}
-          <div class="hoja" in:fly={{ x: sinMovimiento ? 0 : 22 * direccion, duration: sinMovimiento ? 0 : 180 }}>
-            <span class="nombre">
-              <EnLinea valor={actual.nombre} max={OBJETIVO_MAX} etiqueta="Renombrar objetivo" onguardar={(v) => onrenombrar(actual.id, v)} />
-            </span>
-            <span class="conteo" class:completo={actual.total > 0 && actual.logradas === actual.total} title="Tareas logradas">{conteo(actual)}</span>
-            <button type="button" class="borrar" aria-label="Borrar objetivo" title="Borrar objetivo" onclick={() => onborrar(actual.id)}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-            </button>
+      <div class="hojas" class:capa1={capas >= 1} class:capa2={capas >= 2}>
+        <!-- Las flechas van fijas en las orillas de la hoja (no se vuelven a crear al cambiar de
+             objetivo, así no pierden el foco); solo el contenido cambia y entra deslizándose. -->
+        <div class="hoja frente">
+          <button type="button" class="flecha" aria-label="Objetivo anterior" title="Objetivo anterior" aria-disabled={indice <= 0} onclick={() => ir(-1)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+          </button>
+          <div class="contenido" aria-live="polite">
+            {#key actual.id}
+              <div class="actual" in:fly={{ x: sinMovimiento ? 0 : 8 * direccion, duration: sinMovimiento ? 0 : 180 }}>
+                <span class="nombre">
+                  <EnLinea valor={actual.nombre} max={OBJETIVO_MAX} etiqueta="Renombrar objetivo" onguardar={(v) => onrenombrar(actual.id, v)} />
+                </span>
+                <span class="conteo" class:completo={actual.total > 0 && actual.logradas === actual.total} title="Tareas logradas">{conteo(actual)}</span>
+                <button type="button" class="borrar" aria-label="Borrar objetivo" title="Borrar objetivo" onclick={() => onborrar(actual.id)}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+              </div>
+            {/key}
           </div>
-        {/key}
+          <button type="button" class="flecha" aria-label="Objetivo siguiente" title="Objetivo siguiente" aria-disabled={indice >= objetivos.length - 1} onclick={() => ir(1)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+          </button>
+        </div>
       </div>
-
-      <button type="button" class="flecha" aria-label="Objetivo siguiente" title="Objetivo siguiente" aria-disabled={indice >= objetivos.length - 1} onclick={() => ir(1)}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
-      </button>
       {#if objetivos.length > 1}
         <span class="posicion" title="Objetivo {indice + 1} de {objetivos.length}">{indice + 1} / {objetivos.length}</span>
       {/if}
@@ -180,6 +185,22 @@
     border-bottom: 0;
     border-radius: 6px 6px 0 0;
   }
+  /* La del frente lleva las flechas en sus orillas, separadas del objetivo por una línea
+     punteada. */
+  .hoja.frente {
+    gap: 0.2rem;
+    padding-inline: 0.3rem;
+  }
+  .contenido {
+    min-width: 0;
+    padding: 0 0.55rem;
+    border-inline: 1px dashed rgba(255, 255, 255, 0.25);
+  }
+  .actual {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
 
   /* Las hojas de atrás: solo su borde de arriba y el derecho, desfasados, para que asomen sin
      tapar a la del frente. */
@@ -205,7 +226,7 @@
     transform: translate(10px, -10px);
     opacity: 0.6;
   }
-  /* Lugar para lo que asoma a la derecha, para que no se encime con la flecha ›. */
+  /* Lugar para lo que asoma a la derecha, para que no se encime con lo que sigue. */
   .hojas.capa1 {
     margin-right: 5px;
   }
@@ -239,7 +260,7 @@
     place-items: center;
     width: 20px;
     height: 20px;
-    margin-right: -0.3rem;
+    margin-right: -0.25rem;
     color: rgba(255, 255, 255, 0.45);
     background: transparent;
     border: 0;
@@ -252,29 +273,27 @@
     background: rgba(255, 201, 168, 0.15);
   }
 
-  /* Flechas ‹ › a los lados de la pila. En los extremos van con aria-disabled (no disabled)
-     para que no suelten el foco: así ← → siguen funcionando al llegar al final. */
+  /* Flechas ‹ › en las orillas de la hoja del frente. En los extremos van con aria-disabled
+     (no disabled) para que no suelten el foco: así ← → siguen funcionando al llegar al final. */
   .flecha {
-    align-self: center;
     flex-shrink: 0;
     display: grid;
     place-items: center;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     color: rgba(255, 255, 255, 0.85);
     background: transparent;
-    border: 1px dashed rgba(255, 255, 255, 0.5);
+    border: 0;
     border-radius: 50%;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease;
   }
   .flecha:hover:not([aria-disabled='true']) {
     color: #fff;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid #fff;
+    background: rgba(255, 255, 255, 0.12);
   }
   .flecha[aria-disabled='true'] {
-    opacity: 0.3;
+    opacity: 0.25;
     cursor: default;
   }
   .flecha:focus-visible,
@@ -346,7 +365,6 @@
   @media (max-width: 520px) {
     .pila {
       gap: 0.35rem;
-      padding: 10px 0 0;
     }
     .posicion {
       display: none;
