@@ -7,6 +7,8 @@ node_modules
 .wrangler
 /.svelte-kit
 /build
+/build.next
+/build.prev
 
 # OS
 .DS_Store
@@ -23,6 +25,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # SQLite (datos locales)
-local.db
-local.db-shm
-local.db-wal
+# incluye -shm, -wal y los respaldos .pre-migrate-* de scripts/migrate.mjs
+local.db*

@@ -35,9 +35,10 @@ export function sesionValida(valor: string | undefined): boolean {
 	if (!valor || !env.ADMIN_PASSWORD) return false;
 	const [expira, firma, ...resto] = valor.split('.');
 	if (!expira || !firma || resto.length) return false;
-	const esperada = firmar(expira);
-	if (firma.length !== esperada.length) return false;
-	if (!timingSafeEqual(Buffer.from(firma), Buffer.from(esperada))) return false;
+	// Forma estricta antes de comparar: timingSafeEqual exige la misma longitud en BYTES y
+	// una cookie con caracteres no ASCII pasaría una comparación por .length y lanzaría.
+	if (!/^\d{1,16}$/.test(expira) || !/^[0-9a-f]{64}$/.test(firma)) return false;
+	if (!timingSafeEqual(Buffer.from(firma, 'hex'), Buffer.from(firmar(expira), 'hex'))) return false;
 	return Number(expira) > Date.now();
 }
 
@@ -56,5 +57,13 @@ function recientes(ip: string): number[] {
 	return lista;
 }
 export const bloqueado = (ip: string) => recientes(ip).length >= MAX_FALLOS;
-export const registrarFallo = (ip: string) => fallos.set(ip, [...recientes(ip), Date.now()]);
+export const registrarFallo = (ip: string) => {
+	// Las entradas solo se podan al consultar su propia IP; con muchas IPs distintas (un /64
+	// de IPv6) el mapa crecería sin límite. Barrido completo cuando pasa de 1000.
+	if (fallos.size > 1000) {
+		const ahora = Date.now();
+		for (const [k, v] of fallos) if (!v.some((t) => ahora - t < VENTANA_MS)) fallos.delete(k);
+	}
+	fallos.set(ip, [...recientes(ip), Date.now()]);
+};
 export const limpiarFallos = (ip: string) => fallos.delete(ip);

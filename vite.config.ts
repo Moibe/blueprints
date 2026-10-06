@@ -17,8 +17,9 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 
-			// adapter-node: corre con `node build` bajo pm2 en el droplet.
-			adapter: adapter()
+			// adapter-node: corre con `node build` bajo pm2 en el droplet. BUILD_OUT lo usa
+			// scripts/deploy.sh para construir en build.next y cambiar de carpeta de un golpe.
+			adapter: adapter({ out: process.env.BUILD_OUT ?? 'build' })
 		})
 	]
 });

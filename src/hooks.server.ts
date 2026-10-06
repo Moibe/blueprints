@@ -13,6 +13,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (event.url.pathname.startsWith('/api/')) {
 		return json({ error: 'No autenticado.' }, { status: 401 });
 	}
-	if (event.request.method === 'GET') redirect(303, '/login');
+	if (event.request.method === 'GET' || event.request.method === 'HEAD') redirect(303, '/login');
 	return new Response('No autenticado.', { status: 401 });
 };
