@@ -9,11 +9,15 @@
     valor,
     max,
     etiqueta,
+    titulo,
     onguardar
   }: {
     valor: string;
     max: number;
     etiqueta: string;
+    /** Lo que se asoma al pasar el mouse; por omisión, `etiqueta`. Útil donde el texto se
+     *  recorta y conviene asomar el completo. */
+    titulo?: string;
     onguardar: (valor: string) => Promise<string>;
   } = $props();
 
@@ -84,7 +88,7 @@
     <span class="error" role="alert">{error}</span>
   {/if}
 {:else}
-  <button type="button" class="texto" title={etiqueta} onclick={editar}>{mostrado}</button>
+  <button type="button" class="texto" title={titulo ?? etiqueta} onclick={editar}>{mostrado}</button>
 {/if}
 
 <style>

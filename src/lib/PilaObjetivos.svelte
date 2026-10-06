@@ -129,7 +129,13 @@
             {#key actual.id}
               <div class="actual" in:fly={{ x: sinMovimiento ? 0 : 8 * direccion, duration: sinMovimiento ? 0 : 180 }}>
                 <span class="nombre">
-                  <EnLinea valor={actual.nombre} max={OBJETIVO_MAX} etiqueta="Renombrar objetivo" onguardar={(v) => onrenombrar(actual.id, v)} />
+                  <EnLinea
+                    valor={actual.nombre}
+                    max={OBJETIVO_MAX}
+                    etiqueta="Renombrar objetivo"
+                    titulo={actual.nombre}
+                    onguardar={(v) => onrenombrar(actual.id, v)}
+                  />
                 </span>
                 <button
                   type="button"
@@ -194,8 +200,10 @@
     gap: 0.2rem;
     padding-inline: 0.3rem;
   }
+  /* Ancho fijo: todas las pestañas miden igual, sin importar qué tan largo sea el nombre (el
+     que no cabe se recorta con "…" y se asoma completo al pasar el mouse). */
   .contenido {
-    min-width: 0;
+    width: var(--ancho-hoja, 13rem);
     padding: 0 0.55rem;
     border-inline: 1px dashed rgba(255, 255, 255, 0.25);
   }
@@ -238,8 +246,16 @@
   }
 
   .nombre {
+    flex: 1;
     min-width: 0;
-    overflow-wrap: anywhere;
+  }
+  /* El nombre ocupa el ancho que queda y se recorta en una sola línea. */
+  .nombre :global(.texto) {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .borrar {
     flex-shrink: 0;
@@ -358,6 +374,8 @@
   @media (max-width: 520px) {
     .pila {
       gap: 0.35rem;
+      /* Menos ancho de pestaña: en celular hay que dejarle lugar al "+". */
+      --ancho-hoja: 10.5rem;
     }
     .posicion {
       display: none;
