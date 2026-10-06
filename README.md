@@ -62,9 +62,9 @@ sudo apt install -y build-essential python3
 **2. Código y `.env`.**
 
 ```sh
-mkdir -p ~/apps
-git clone https://github.com/Moibe/blueprints.git ~/apps/blueprints
-cd ~/apps/blueprints
+mkdir -p ~/code
+git clone https://github.com/Moibe/blueprints.git ~/code/blueprints
+cd ~/code/blueprints
 cp .env.example .env && nano .env
 ```
 
@@ -92,7 +92,7 @@ XFF_DEPTH=1
 ```sh
 npm ci --include=dev
 npm run build
-npm run db:migrate                 # crea ~/apps/blueprints/local.db
+npm run db:migrate                 # crea ~/code/blueprints/local.db
 pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup                        # imprime un comando sudo: córrelo para que arranque con el sistema
@@ -115,7 +115,7 @@ y recarga nginx solo (`sudo certbot renew --dry-run` para comprobarlo).
 ### Actualizar
 
 ```sh
-~/apps/blueprints/scripts/deploy.sh
+~/code/blueprints/scripts/deploy.sh
 ```
 
 Hace `git pull --ff-only`, `npm ci`, construye en `build.next`, aplica migraciones (con
@@ -141,7 +141,7 @@ nvm install 24 && nvm alias default 24   # o la versión que toque (engines exig
 npm install -g pm2 && pm2 update
 pm2 unstartup systemd                    # corre la línea sudo que imprime
 pm2 startup systemd                      # ídem
-~/apps/blueprints/scripts/deploy.sh      # npm ci + build + reload con el Node nuevo
+~/code/blueprints/scripts/deploy.sh      # npm ci + build + reload con el Node nuevo
 pm2 save
 ```
 
@@ -150,12 +150,12 @@ pm2 save
 ### Operación
 
 - Logs: `pm2 logs blueprints` · estado: `pm2 status` · reiniciar: `pm2 restart blueprints`.
-- La base es `~/apps/blueprints/local.db` (está en `.gitignore`: `git pull` nunca la toca).
+- La base es `~/code/blueprints/local.db` (está en `.gitignore`: `git pull` nunca la toca).
   Cada `db:migrate` deja un respaldo `local.db.pre-migrate-<fecha>` (se guardan los 5 últimos).
 - Respaldo diario fuera de la carpeta del proyecto (`sudo apt install sqlite3`; `.backup` es
   consistente aunque la app esté corriendo, `cp` no lo es con WAL). En `crontab -e`:
   ```
-  15 3 * * * mkdir -p $HOME/respaldos && sqlite3 $HOME/apps/blueprints/local.db ".backup '$HOME/respaldos/blueprints-$(date +\%F).db'" && find $HOME/respaldos -name 'blueprints-*.db' -mtime +30 -delete
+  15 3 * * * mkdir -p $HOME/respaldos && sqlite3 $HOME/code/blueprints/local.db ".backup '$HOME/respaldos/blueprints-$(date +\%F).db'" && find $HOME/respaldos -name 'blueprints-*.db' -mtime +30 -delete
   ```
   Y de vez en cuando cópialos fuera del droplet (`scp`/`rsync`): es la única copia de tus datos.
 - Si pierdes la contraseña: cambia `ADMIN_PASSWORD` en `.env` y `pm2 startOrReload ecosystem.config.cjs`.

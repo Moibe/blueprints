@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Actualiza blueprints en el droplet. Se corre desde cualquier carpeta:
-#   ~/apps/blueprints/scripts/deploy.sh
+#   ~/code/blueprints/scripts/deploy.sh
 #
 # git pull → npm ci → build (en build.next) → migraciones → swap de carpeta → pm2 reload →
 # comprobación de que responde. Con set -e, si algo falla se detiene ahí: el build se hace en
