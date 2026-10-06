@@ -203,7 +203,7 @@
   /* Ancho fijo: todas las pestañas miden igual, sin importar qué tan largo sea el nombre (el
      que no cabe se recorta con "…" y se asoma completo al pasar el mouse). */
   .contenido {
-    width: var(--ancho-hoja, 13rem);
+    width: var(--ancho-hoja, 17rem);
     padding: 0 0.55rem;
     border-inline: 1px dashed rgba(255, 255, 255, 0.25);
   }
@@ -375,7 +375,7 @@
     .pila {
       gap: 0.35rem;
       /* Menos ancho de pestaña: en celular hay que dejarle lugar al "+". */
-      --ancho-hoja: 10.5rem;
+      --ancho-hoja: 11rem;
     }
     .posicion {
       display: none;
