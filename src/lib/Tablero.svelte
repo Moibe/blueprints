@@ -8,6 +8,7 @@
   import { scale } from 'svelte/transition';
   import ConfirmarModal from '$lib/ConfirmarModal.svelte';
   import MenuContextual from '$lib/MenuContextual.svelte';
+  import Chispazo from '$lib/Chispazo.svelte';
   import { TARJETA_MAX, limpiarTexto } from '$lib/secciones';
 
   // Fechas: Date desde el load, string ISO desde los endpoints (JSON).
@@ -272,25 +273,7 @@
       animate:flip={{ duration: reducido ? 0 : 220 }}
     >
       {#if anim}
-        <svg
-          class="chispazo"
-          class:final={anim.fase === 'final'}
-          width={anim.w}
-          height={anim.h}
-          viewBox="0 0 {anim.w} {anim.h}"
-          style="--trazo: {DURACION_TRAZO}ms"
-          aria-hidden="true"
-        >
-          <defs>
-            <filter id="resplandor-{t.id}" x="-20%" y="-60%" width="140%" height="220%">
-              <feGaussianBlur stdDeviation="3" />
-            </filter>
-          </defs>
-          <path class="rastro-halo" d={anim.d} pathLength="1" filter="url(#resplandor-{t.id})" />
-          <path class="rastro" d={anim.d} pathLength="1" />
-          <path class="chispa-halo" d={anim.d} pathLength="1" filter="url(#resplandor-{t.id})" />
-          <path class="chispa" d={anim.d} pathLength="1" />
-        </svg>
+        <Chispazo d={anim.d} w={anim.w} h={anim.h} duracion={DURACION_TRAZO} final={anim.fase === 'final'} />
       {/if}
       {#if volteadas[t.id]}
         <!-- Reverso: la ficha de la tarea. -->
@@ -542,87 +525,6 @@
       0 0 0 1px rgba(245, 197, 66, 0.12),
       0 0 14px rgba(245, 197, 66, 0.28),
       0 4px 14px rgba(0, 0, 0, 0.18);
-  }
-
-  /* Chispazo: SVG sobre el borde (de ahí el -1.5px, el grosor del borde). Con pathLength=1,
-     1 equivale a todo el contorno. */
-  .chispazo {
-    position: absolute;
-    left: -1.5px;
-    top: -1.5px;
-    overflow: visible;
-    pointer-events: none;
-    transition: opacity 0.6s ease 0.2s;
-  }
-  .chispazo.final {
-    opacity: 0;
-  }
-  .chispazo path {
-    fill: none;
-    stroke-linecap: round;
-  }
-  /* El rastro dorado se va dibujando desde el arranque, sobre la paloma. */
-  .rastro,
-  .rastro-halo {
-    stroke-dasharray: 1 1;
-    stroke-dashoffset: 1;
-    animation: dorar var(--trazo) cubic-bezier(0.6, 0, 0.35, 1) forwards;
-  }
-  .rastro {
-    stroke: #f5c542;
-    stroke-width: 2;
-  }
-  .rastro-halo {
-    stroke: #ffd666;
-    stroke-width: 6;
-    opacity: 0.7;
-  }
-  /* La chispa es un trazo cortito que viaja en la punta del rastro, con el mismo timing,
-     y titila. */
-  .chispa {
-    stroke: #fffbe8;
-    stroke-width: 4;
-    stroke-dasharray: 0.012 0.988;
-    animation:
-      viajar-chispa var(--trazo) cubic-bezier(0.6, 0, 0.35, 1) forwards,
-      titilar 0.11s steps(2) infinite alternate;
-  }
-  .chispa-halo {
-    stroke: #ffe08a;
-    stroke-width: 14;
-    stroke-dasharray: 0.04 0.96;
-    animation:
-      viajar-halo var(--trazo) cubic-bezier(0.6, 0, 0.35, 1) forwards,
-      titilar 0.11s steps(2) infinite alternate;
-  }
-  @keyframes dorar {
-    to {
-      stroke-dashoffset: 0;
-    }
-  }
-  @keyframes viajar-chispa {
-    from {
-      stroke-dashoffset: 0.012;
-    }
-    to {
-      stroke-dashoffset: -0.988;
-    }
-  }
-  @keyframes viajar-halo {
-    from {
-      stroke-dashoffset: 0.04;
-    }
-    to {
-      stroke-dashoffset: -0.96;
-    }
-  }
-  @keyframes titilar {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0.65;
-    }
   }
 
   /* Al cerrar la vuelta: destello de la tarjeta, rebote de la paloma y se dibuja la ✓. */

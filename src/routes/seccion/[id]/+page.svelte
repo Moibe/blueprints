@@ -37,11 +37,6 @@
   const bajada = $derived(
     objetivos.length === 0 ? 'Hoja en blanco: crea el primer objetivo de esta sección.' : ''
   );
-  // Siguiente objetivo: el primero que aún no esté completo (sin tareas cuenta como pendiente).
-  const siguiente = $derived(
-    objetivos.find((o) => o.tarjetas.length === 0 || o.tarjetas.some((t) => !t.hecho))?.nombre ??
-      (objetivos.length ? 'Todo logrado ✓' : '—')
-  );
 
   async function api(url: string, method: string, body?: object) {
     const res = await fetch(url, {
@@ -113,8 +108,9 @@
       <Rotulo
         proyecto={data.seccion.nombre}
         renombrar={editable}
-        etiquetaPlano="Siguiente objetivo"
-        plano={siguiente}
+        etiquetaPlano="Objetivo actual"
+        plano={objetivoActivo?.nombre ?? '—'}
+        destello={objetivoActivo?.id}
         avance={{ objetivos: objetivos.length, tareas: total, logradas }}
         {fecha}
       />
