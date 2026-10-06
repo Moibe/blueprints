@@ -38,12 +38,12 @@ echo "▸ pm2"
 # Por archivo (no `pm2 reload blueprints`): así se re-lee .env y se aplican sus cambios.
 pm2 startOrReload ecosystem.config.cjs --update-env
 
-# adapter-node valida ORIGIN/BODY_SIZE_LIMIT al cargar y `listen` puede fallar (puerto ocupado o
-# privilegiado): pm2 devuelve 0 igual, así que se comprueba que la app de verdad responda.
+# adapter-node valida ORIGIN/BODY_SIZE_LIMIT al cargar y `listen` puede fallar (p. ej. puerto
+# ocupado): pm2 devuelve 0 igual, así que se comprueba que la app de verdad responda.
 PUERTO=$(grep -E '^PORT=' .env | tail -1 | cut -d= -f2- | tr -d ' "'"'"'\r')
 sleep 2
-if ! curl -fsS -o /dev/null "http://127.0.0.1:${PUERTO:-3000}/login"; then
-	echo "✗ la app no responde en 127.0.0.1:${PUERTO:-3000} tras el reload. Últimos logs:" >&2
+if ! curl -fsS -o /dev/null "http://127.0.0.1:${PUERTO:-8888}/login"; then
+	echo "✗ la app no responde en 127.0.0.1:${PUERTO:-8888} tras el reload. Últimos logs:" >&2
 	pm2 logs blueprints --lines 40 --nostream >&2 || true
 	echo "Para volver a la versión anterior: rm -rf build && mv build.prev build && pm2 restart blueprints" >&2
 	exit 1

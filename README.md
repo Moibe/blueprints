@@ -12,7 +12,7 @@ Node 22 LTS (`.nvmrc`; `.npmrc` tiene `engine-strict`, así que npm se niega con
 npm install
 cp .env.example .env        # con ADMIN_PASSWORD vacío la app queda abierta en dev
 npm run db:migrate          # crea ./local.db
-npm run dev                 # http://localhost:1000
+npm run dev                 # http://localhost:8888
 ```
 
 Comandos útiles: `npm run check` (svelte-check), `npm run db:generate` (nueva migración tras
@@ -21,7 +21,7 @@ producción tal cual correrá en el droplet, con el `.env` local).
 
 ## Despliegue en el droplet · https://blueprints.moibe.me
 
-Arquitectura: `node build` (adapter-node) escucha en `127.0.0.1:1000` bajo **pm2**;
+Arquitectura: `node build` (adapter-node) escucha en `127.0.0.1:8888` bajo **pm2**;
 **nginx** hace el proxy reverso con TLS de **certbot**. Archivos involucrados:
 
 | Archivo | Para qué |
@@ -33,7 +33,7 @@ Arquitectura: `node build` (adapter-node) escucha en `127.0.0.1:1000` bajo **pm2
 | `.env` (no se commitea) | Variables; ver bloque de abajo |
 
 Los pasos están escritos para un usuario normal con `sudo` (no root). Si operas como root,
-sáltate lo de "puerto privilegiado" del paso 3 y los `sudo`.
+sáltate los `sudo`.
 
 ### Primera vez
 
@@ -71,7 +71,7 @@ cp .env.example .env && nano .env
 `.env` del droplet (todo lo demás como en `.env.example`):
 
 ```ini
-PORT=1000
+PORT=8888
 HOST=127.0.0.1
 ORIGIN=https://blueprints.moibe.me
 DATABASE_URL=./local.db
@@ -90,20 +90,14 @@ XFF_DEPTH=1
 **3. Build, migraciones y pm2.**
 
 ```sh
-# El puerto 1000 es "privilegiado" en Linux (< 1024): un usuario normal no puede abrirlo y
-# pm2 se quedaría reiniciando con "listen EACCES". Una sola vez (sobrevive reinicios):
-echo 'net.ipv4.ip_unprivileged_port_start=1000' | sudo tee /etc/sysctl.d/90-blueprints-port.conf
-sudo sysctl --system
-# (Alternativa: cambiar PORT a uno ≥ 1024 en .env, vite.config.ts y el conf de nginx.)
-
 npm ci --include=dev
 npm run build
 npm run db:migrate                 # crea ~/apps/blueprints/local.db
 pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup                        # imprime un comando sudo: córrelo para que arranque con el sistema
-curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' http://127.0.0.1:1000/
-# → 303 http://127.0.0.1:1000/login   (si no: pm2 logs blueprints)
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' http://127.0.0.1:8888/
+# → 303 http://127.0.0.1:8888/login   (si no: pm2 logs blueprints)
 ```
 
 **4. nginx + certificado.**

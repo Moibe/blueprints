@@ -6,8 +6,8 @@ import { defineConfig } from 'vite';
 export default defineConfig({
 	// Mismo puerto que tendrá en el droplet. strictPort: si está ocupado, falla en vez de
 	// brincar a otro puerto en silencio.
-	server: { port: 1000, strictPort: true },
-	preview: { port: 1000, strictPort: true },
+	server: { port: 8888, strictPort: true },
+	preview: { port: 8888, strictPort: true },
 	plugins: [
 		tailwindcss(),
 		sveltekit({
