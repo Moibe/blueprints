@@ -5,12 +5,15 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 
 const url = process.env.DATABASE_URL ?? './local.db';
+// Se mira ANTES de abrir: `new Database` crea el archivo, y en la primera migración
+// respaldaría una base recién creada y vacía.
+const habiaDatos = fs.existsSync(url) && fs.statSync(url).size > 0;
 const sqlite = new Database(url);
 
 // Respaldo previo (API de backup en línea: consistente aunque la app esté corriendo en WAL).
 // El ROLLBACK del migrador solo cubre errores SQL, no una migración válida que borre datos.
 // Se conservan los 5 más recientes; .gitignore los tapa con `local.db*`.
-if (fs.existsSync(url)) {
+if (habiaDatos) {
 	const marca = new Date().toISOString().replace(/[:.]/g, '-');
 	const respaldo = `${url}.pre-migrate-${marca}`;
 	await sqlite.backup(respaldo);

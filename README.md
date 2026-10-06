@@ -30,6 +30,7 @@ Arquitectura: `node build` (adapter-node) escucha en `127.0.0.1:8888` bajo **pm2
 | `deploy/nginx/blueprints.moibe.me.conf` | Server block de nginx (certbot le agrega el 443) |
 | `scripts/deploy.sh` | Actualizar: pull → ci → build → migraciones → swap → reload → comprobar |
 | `scripts/migrate.mjs` | Migraciones con respaldo previo de la base |
+| `scripts/backup.sh` | Respaldo diario de la base (cron; ver Operación) |
 | `.env` (no se commitea) | Variables; ver bloque de abajo |
 
 Los pasos están escritos para un usuario normal con `sudo` (no root). Si operas como root,
@@ -151,13 +152,21 @@ pm2 save
 
 - Logs: `pm2 logs blueprints` · estado: `pm2 status` · reiniciar: `pm2 restart blueprints`.
 - La base es `~/code/blueprints/local.db` (está en `.gitignore`: `git pull` nunca la toca).
-  Cada `db:migrate` deja un respaldo `local.db.pre-migrate-<fecha>` (se guardan los 5 últimos).
-- Respaldo diario fuera de la carpeta del proyecto (`sudo apt install sqlite3`; `.backup` es
-  consistente aunque la app esté corriendo, `cp` no lo es con WAL). En `crontab -e`:
+  Cada `db:migrate` sobre una base que ya tiene datos deja un respaldo
+  `local.db.pre-migrate-<fecha>` (se guardan los 5 últimos; en la primera migración no hay).
+  Sirve para deshacer una migración mala, no como respaldo: eso es el siguiente punto.
+- Respaldo diario en `~/respaldos` (30 días, con verificación de integridad de cada copia).
+  `scripts/backup.sh` usa el `better-sqlite3` del proyecto, así que **no hace falta instalar
+  `sqlite3`** (y `cp` no sirve: la base está en modo WAL). Una sola vez:
+  ```sh
+  install -m 755 ~/code/blueprints/scripts/backup.sh /usr/local/bin/blueprints-backup
+  blueprints-backup && ls -lh ~/respaldos     # prueba manual: "respaldo ok … integridad ok"
+  ( crontab -l 2>/dev/null | grep -v blueprints-backup; echo '15 3 * * * /usr/local/bin/blueprints-backup >> /var/log/blueprints-backup.log 2>&1' ) | crontab -
   ```
-  15 3 * * * mkdir -p $HOME/respaldos && sqlite3 $HOME/code/blueprints/local.db ".backup '$HOME/respaldos/blueprints-$(date +\%F).db'" && find $HOME/respaldos -name 'blueprints-*.db' -mtime +30 -delete
-  ```
-  Y de vez en cuando cópialos fuera del droplet (`scp`/`rsync`): es la única copia de tus datos.
+  La hora es la del servidor. El script carga nvm por su cuenta (cron no tiene `node` en el
+  PATH), así que sobrevive a un cambio de versión de Node. Si cambias `scripts/backup.sh`,
+  vuelve a correr el `install`. Los respaldos viven en el mismo droplet: de vez en cuando
+  cópialos fuera (`scp`/`rsync`), o activa los backups del droplet en el panel de DigitalOcean.
 - Si pierdes la contraseña: cambia `ADMIN_PASSWORD` en `.env` y `pm2 startOrReload ecosystem.config.cjs`.
 - Tras 5 contraseñas malas desde una IP, el login responde 429 por 10 minutos (se reinicia
   con `pm2 restart blueprints`).
