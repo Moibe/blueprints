@@ -1,7 +1,7 @@
 <script lang="ts">
   // Objetivos como una pila de hojas sobre el área de dibujo: se ve uno a la vez (las demás
   // asoman detrás) y se recorren con las flechas ‹ › de sus orillas o con ← → del teclado. La
-  // hoja del frente muestra su nombre (editable en el lugar), su avance de tareas y el botón
+  // hoja del frente muestra su nombre (editable en el lugar) y el botón
   // para borrarla;
   // "+" crea un objetivo escribiendo su nombre ahí mismo (Enter crea, Escape cancela).
   import { fly } from 'svelte/transition';
@@ -40,9 +40,6 @@
     direccion = paso;
     onactivar(destino.id);
   }
-
-  // Avance de tareas: sin tareas no se muestra nada; con tareas, "logradas de total".
-  const conteo = (o: Hoja) => (o.total === 0 ? '' : o.logradas === 0 ? `${o.total}` : `${o.logradas} de ${o.total}`);
 
   let creando = $state(false);
   let borrador = $state('');
@@ -134,7 +131,6 @@
                 <span class="nombre">
                   <EnLinea valor={actual.nombre} max={OBJETIVO_MAX} etiqueta="Renombrar objetivo" onguardar={(v) => onrenombrar(actual.id, v)} />
                 </span>
-                <span class="conteo" class:completo={actual.total > 0 && actual.logradas === actual.total} title="Tareas logradas">{conteo(actual)}</span>
                 <button
                   type="button"
                   class="borrar"
@@ -244,22 +240,6 @@
   .nombre {
     min-width: 0;
     overflow-wrap: anywhere;
-  }
-  .conteo {
-    flex-shrink: 0;
-    font-family: var(--bp-font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.06em;
-    /* Cero sin rayita: a este tamaño el de JetBrains Mono se confunde con un 8. */
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: 'zero' 0;
-    color: rgba(255, 255, 255, 0.55);
-  }
-  .conteo:empty {
-    display: none;
-  }
-  .conteo.completo {
-    color: #f5c542;
   }
   .borrar {
     flex-shrink: 0;
