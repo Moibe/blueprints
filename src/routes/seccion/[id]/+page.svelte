@@ -149,14 +149,15 @@
   </div>
 </div>
 
+<!-- Un objetivo con tareas no se borra: en su lugar sale un aviso, sin botón de borrar. -->
 <ConfirmarModal
   open={porBorrar !== null}
-  titulo="¿Borrar «{porBorrar?.nombre ?? ''}»?"
+  titulo={porBorrar?.tareas ? `«${porBorrar.nombre}» tiene tareas` : `¿Borrar «${porBorrar?.nombre ?? ''}»?`}
   detalle={porBorrar?.tareas
-    ? `Se borran también sus ${porBorrar.tareas} ${porBorrar.tareas === 1 ? 'tarea' : 'tareas'}. No se puede deshacer.`
+    ? `No se puede borrar un objetivo con tareas (tiene ${porBorrar.tareas}). Borra primero sus tareas.`
     : 'Este objetivo no tiene tareas. No se puede deshacer.'}
   accion="Borrar objetivo"
-  onconfirmar={borrarObjetivo}
+  onconfirmar={porBorrar?.tareas ? undefined : borrarObjetivo}
   onclose={() => (porBorrar = null)}
 />
 

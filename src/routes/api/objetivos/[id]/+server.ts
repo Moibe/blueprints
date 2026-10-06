@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { objetivos } from '$lib/server/db/schema';
+import { objetivos, tarjetas } from '$lib/server/db/schema';
 import { OBJETIVO_MAX, limpiarTexto } from '$lib/secciones';
 import type { RequestHandler } from './$types';
 
@@ -27,9 +27,15 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 	return json({ objetivo });
 };
 
-// Borra un objetivo con todas sus tareas (cascade).
+// Borra un objetivo, solo si ya no tiene tareas (para no perderlas por accidente).
 export const DELETE: RequestHandler = ({ params }) => {
 	const id = Number(params.id);
+	if (Number.isInteger(id)) {
+		const { n } = db.select({ n: count() }).from(tarjetas).where(eq(tarjetas.objetivoId, id)).get() ?? { n: 0 };
+		if (n > 0) {
+			return json({ error: 'No se puede borrar un objetivo que tiene tareas.' }, { status: 409 });
+		}
+	}
 	const borrado = Number.isInteger(id) && db.delete(objetivos).where(eq(objetivos.id, id)).run().changes > 0;
 	if (!borrado) return json({ error: 'Ese objetivo no existe.' }, { status: 404 });
 	return json({ ok: true });

@@ -1,6 +1,7 @@
 <script lang="ts">
   // Confirmación con estilo de plano (en lugar del confirm() del navegador). <dialog> nativo:
-  // vive en el top layer y Escape lo cierra solo.
+  // vive en el top layer y Escape lo cierra solo. Sin `onconfirmar` es solo un aviso: un botón
+  // "Entendido" y nada que confirmar.
   let {
     open = $bindable(false),
     titulo,
@@ -13,7 +14,7 @@
     titulo: string;
     detalle: string;
     accion?: string;
-    onconfirmar: () => void | Promise<void>;
+    onconfirmar?: () => void | Promise<void>;
     /** Se llama al cerrarse por cualquier vía (Cancelar, Escape, clic fuera o tras confirmar). */
     onclose?: () => void;
   } = $props();
@@ -34,7 +35,7 @@
 
   // Si la acción falla, el modal se queda abierto y muestra el porqué.
   async function confirmar() {
-    if (ocupado) return;
+    if (ocupado || !onconfirmar) return;
     ocupado = true;
     error = '';
     try {
@@ -63,17 +64,21 @@
   }}
 >
   <div class="hoja">
-    <span class="tag">Confirmar</span>
+    <span class="tag">{onconfirmar ? 'Confirmar' : 'Aviso'}</span>
     <h2 id="{uid}-titulo">{titulo}</h2>
     <p class="detalle">{detalle}</p>
     {#if error}
       <p class="error" role="alert">{error}</p>
     {/if}
     <div class="acciones">
-      <button type="button" class="btn-sec" onclick={() => (open = false)}>Cancelar</button>
-      <button type="button" class="btn-pri" disabled={ocupado} onclick={confirmar}>
-        {ocupado ? 'Un momento…' : accion}
-      </button>
+      {#if onconfirmar}
+        <button type="button" class="btn-sec" onclick={() => (open = false)}>Cancelar</button>
+        <button type="button" class="btn-pri" disabled={ocupado} onclick={confirmar}>
+          {ocupado ? 'Un momento…' : accion}
+        </button>
+      {:else}
+        <button type="button" class="btn-sec" onclick={() => (open = false)}>Entendido</button>
+      {/if}
     </div>
   </div>
 </dialog>

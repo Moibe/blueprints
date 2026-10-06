@@ -135,7 +135,14 @@
                   <EnLinea valor={actual.nombre} max={OBJETIVO_MAX} etiqueta="Renombrar objetivo" onguardar={(v) => onrenombrar(actual.id, v)} />
                 </span>
                 <span class="conteo" class:completo={actual.total > 0 && actual.logradas === actual.total} title="Tareas logradas">{conteo(actual)}</span>
-                <button type="button" class="borrar" aria-label="Borrar objetivo" title="Borrar objetivo" onclick={() => onborrar(actual.id)}>
+                <button
+                  type="button"
+                  class="borrar"
+                  class:bloqueado={actual.total > 0}
+                  aria-label="Borrar objetivo"
+                  title={actual.total > 0 ? 'Tiene tareas: no se puede borrar' : 'Borrar objetivo'}
+                  onclick={() => onborrar(actual.id)}
+                >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
                 </button>
               </div>
@@ -268,9 +275,14 @@
     cursor: pointer;
     transition: color 0.15s ease, background 0.15s ease;
   }
-  .borrar:hover {
+  .borrar:hover:not(.bloqueado) {
     color: #ffc9a8;
     background: rgba(255, 201, 168, 0.15);
+  }
+  /* Con tareas no se puede borrar: la × se apaga (al pulsarla sale un aviso con el porqué). */
+  .borrar.bloqueado {
+    opacity: 0.4;
+    cursor: help;
   }
 
   /* Flechas ‹ › en las orillas de la hoja del frente. En los extremos van con aria-disabled
