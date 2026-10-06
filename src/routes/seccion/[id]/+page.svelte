@@ -1,9 +1,9 @@
 <script lang="ts">
-  // Hoja de una sección (proyecto): encabezado, rótulo, pestañas de objetivos y el tablero de
+  // Hoja de una sección (proyecto): encabezado, rótulo, pila de objetivos y el tablero de
   // tareas del objetivo activo.
   import Encabezado from '$lib/Encabezado.svelte';
   import Rotulo from '$lib/Rotulo.svelte';
-  import Pestanas from '$lib/Pestanas.svelte';
+  import PilaObjetivos from '$lib/PilaObjetivos.svelte';
   import Tablero from '$lib/Tablero.svelte';
   import ConfirmarModal from '$lib/ConfirmarModal.svelte';
   import { invalidateAll } from '$app/navigation';
@@ -80,8 +80,12 @@
   }
   async function borrarObjetivo() {
     if (!porBorrar) return;
-    await api(`/api/objetivos/${porBorrar.id}`, 'DELETE');
-    objetivos = objetivos.filter((o) => o.id !== porBorrar!.id);
+    const id = porBorrar.id;
+    await api(`/api/objetivos/${id}`, 'DELETE');
+    // En la pila se queda en el vecino (el que ocupa su lugar, o el anterior si era el último).
+    const i = objetivos.findIndex((o) => o.id === id);
+    objetivos = objetivos.filter((o) => o.id !== id);
+    activo = objetivos[Math.min(i, objetivos.length - 1)]?.id ?? null;
   }
 
   function tareasCambiaron(id: number, tarjetas: Tarjeta[]) {
@@ -118,7 +122,7 @@
   </div>
 
   <div class="trabajo">
-    <Pestanas
+    <PilaObjetivos
       objetivos={objetivos.map((o) => ({
         id: o.id,
         nombre: o.nombre,

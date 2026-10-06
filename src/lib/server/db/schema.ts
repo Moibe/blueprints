@@ -12,7 +12,7 @@ export const secciones = sqliteTable('secciones', {
 
 export type Seccion = typeof secciones.$inferSelect;
 
-// Objetivos de una sección; en la hoja son las pestañas sobre el área de dibujo.
+// Objetivos de una sección; en la hoja son una pila sobre el área de dibujo (se ve uno a la vez).
 export const objetivos = sqliteTable('objetivos', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	seccionId: integer('seccion_id')

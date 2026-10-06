@@ -5,7 +5,7 @@ import { objetivos, secciones } from '$lib/server/db/schema';
 import { OBJETIVO_MAX, limpiarTexto } from '$lib/secciones';
 import type { RequestHandler } from './$types';
 
-// Crea un objetivo (pestaña) en la sección.
+// Crea un objetivo en la sección (queda al final de la pila).
 export const POST: RequestHandler = async ({ params, request }) => {
 	const seccionId = Number(params.id);
 	const body = await request.json().catch(() => null);
