@@ -5,6 +5,7 @@
   import favicon from '$lib/assets/favicon.svg';
   import { onMount } from 'svelte';
   import { afterNavigate, goto, invalidate } from '$app/navigation';
+  import { page } from '$app/state';
   import TopNav from '$lib/TopNav.svelte';
   import Sidebar from '$lib/Sidebar.svelte';
   import CrearSeccionModal from '$lib/CrearSeccionModal.svelte';
@@ -49,14 +50,19 @@
   <link rel="icon" href={favicon} />
 </svelte:head>
 
-<TopNav />
-<Sidebar {collapsed} {toggleCollapsed} secciones={data.secciones} oncrear={() => (crearAbierto = true)} />
-<main class={collapsed ? 'collapsed' : ''}>
-  <div class="work-scroll">
-    {@render children()}
-  </div>
-</main>
-<CrearSeccionModal bind:open={crearAbierto} oncreada={seccionCreada} />
+{#if page.url.pathname === '/login'}
+  <!-- Login: solo el fondo de plano, sin barra ni sidebar. -->
+  {@render children()}
+{:else}
+  <TopNav conSesion={data.conSesion} />
+  <Sidebar {collapsed} {toggleCollapsed} secciones={data.secciones} oncrear={() => (crearAbierto = true)} />
+  <main class={collapsed ? 'collapsed' : ''}>
+    <div class="work-scroll">
+      {@render children()}
+    </div>
+  </main>
+  <CrearSeccionModal bind:open={crearAbierto} oncreada={seccionCreada} />
+{/if}
 
 <style>
   :global(:root) {

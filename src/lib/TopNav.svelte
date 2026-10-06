@@ -1,6 +1,7 @@
 <script lang="ts">
   // Barra superior de plano: vidrio translúcido con marco punteado, tilt 3D al pasar el
   // mouse. La marca lleva a la home; en móvil queda solo la escuadra.
+  let { conSesion = false }: { conSesion?: boolean } = $props();
   let tiltX = $state(0);
   let tiltY = $state(0);
 
@@ -36,6 +37,12 @@
   </a>
 
   <span class="sheet-ref" aria-hidden="true">ESC 1:50 · HOJA 01</span>
+
+  {#if conSesion}
+    <form method="POST" action="/logout" class="salir">
+      <button type="submit">Salir</button>
+    </form>
+  {/if}
 </header>
 
 <style>
@@ -100,6 +107,29 @@
     letter-spacing: 0.16em;
     color: rgba(255, 255, 255, 0.6);
     white-space: nowrap;
+  }
+
+  .salir {
+    margin: 0 0 0 1.25rem;
+  }
+  .salir button {
+    font-family: var(--bp-font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75);
+    background: transparent;
+    border: 1px solid var(--bp-line-soft);
+    border-radius: 6px;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease;
+  }
+  .salir button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
   }
 
   /* En pantallas chicas: solo la escuadra. */
