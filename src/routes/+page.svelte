@@ -63,17 +63,13 @@
         </g>
       </g>
 
-      <g class="rotulo" fill="currentColor" text-anchor="middle">
-        <text x="140" y="98">RECÁMARA</text>
-        <text x="110" y="226">ESTANCIA</text>
-        <text x="340" y="108">COCINA</text>
-        <text x="340" y="236">TALLER</text>
-      </g>
+      <!-- Sin nombres de cuarto: el plano es de muestra, no de una casa. Solo quedan las
+           superficies, centradas en cada espacio. -->
       <g class="area" fill="currentColor" text-anchor="middle">
-        <text x="140" y="116">14.4 m²</text>
-        <text x="110" y="244">14.4 m²</text>
-        <text x="340" y="126">16.2 m²</text>
-        <text x="340" y="254">12.0 m²</text>
+        <text x="140" y="104">14.4 m²</text>
+        <text x="110" y="224">14.4 m²</text>
+        <text x="340" y="114">16.2 m²</text>
+        <text x="340" y="234">12.0 m²</text>
         <text x="240" y="11">12.00</text>
         <text x="11" y="160" transform="rotate(-90 11 160)">7.20</text>
       </g>
@@ -137,11 +133,6 @@
   .cota {
     stroke-width: 0.9;
     opacity: 0.8;
-  }
-  .rotulo text {
-    font-family: var(--bp-font-hand);
-    font-size: 15px;
-    letter-spacing: 0.06em;
   }
   .area text {
     font-family: var(--bp-font-mono);
