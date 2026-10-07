@@ -28,6 +28,7 @@ Arquitectura: `node build` (adapter-node) escucha en `127.0.0.1:8888` bajo **pm2
 | --- | --- |
 | `ecosystem.config.cjs` | Proceso pm2: lee `.env` y arranca `build/index.js` |
 | `deploy/nginx/blueprints.moibe.me.conf` | Server block de nginx (certbot le agrega el 443) |
+| `.github/workflows/deploy.yml` | Despliega en cada push a `main` (corre `scripts/deploy.sh` por SSH) |
 | `scripts/deploy.sh` | Actualizar: pull → ci → build → migraciones → swap → reload → comprobar |
 | `scripts/migrate.mjs` | Migraciones con respaldo previo de la base |
 | `scripts/backup.sh` | Respaldo diario de la base (cron; ver Operación) |
@@ -114,6 +115,13 @@ Listo: `https://blueprints.moibe.me` pide la contraseña. certbot deja programad
 y recarga nginx solo (`sudo certbot renew --dry-run` para comprobarlo).
 
 ### Actualizar
+
+**Solo con hacer push a `main`**: el workflow `.github/workflows/deploy.yml` entra por SSH al
+droplet y corre el script de abajo. También se puede lanzar a mano desde la pestaña *Actions*
+de GitHub. Necesita los secrets `SSH_PRIVATE_KEY`, `SSH_HOST` y `SSH_USER` en el repo (los
+mismos de los demás proyectos del droplet).
+
+Para desplegar sin pasar por GitHub (o si Actions está caído), el mismo script a mano:
 
 ```sh
 ~/code/blueprints/scripts/deploy.sh

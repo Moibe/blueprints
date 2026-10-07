@@ -1,0 +1,30 @@
+name: deploy blueprints 🚀
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch: # permite correrlo a mano desde la pestaña Actions
+
+jobs:
+    deploy:
+        name: pull · build · pm2
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: install ssh key
+              run: |
+                  install -m 600 -D /dev/null ~/.ssh/id_rsa
+                  echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+                  ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+
+            # Los pasos viven en scripts/deploy.sh (pull → ci → build en build.next →
+            # migraciones con respaldo → swap → pm2 → comprobar que responde), que ya deja la
+            # versión anterior corriendo si algo falla; aquí solo se corre. nvm no está en el
+            # PATH de una shell SSH no-interactiva, así que se carga explícito.
+            - name: deploy on droplet
+              run: |
+                  ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use node >/dev/null && ~/code/blueprints/scripts/deploy.sh'
+
+            - name: cleanup
+              run: rm -rf ~/.ssh
