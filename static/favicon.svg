@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="blueprints">
+  <title>blueprints</title>
+  <!-- Fondo de plano: el mismo degradado y la misma cuadrícula de la app. -->
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2160c4" />
+      <stop offset="1" stop-color="#0b2e6f" />
+    </linearGradient>
+    <pattern id="rejilla" width="5.333" height="5.333" patternUnits="userSpaceOnUse">
+      <path d="M5.333 0V5.333M0 5.333H5.333" fill="none" stroke="#fff" stroke-opacity="0.14" stroke-width="1" />
+    </pattern>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#fondo)" />
+  <rect width="32" height="32" rx="7" fill="url(#rejilla)" />
+
+  <!-- Escuadra de dibujo: la de la barra superior, con el trazo más grueso para que se lea a
+       16 px, y sin las cotas finas (a ese tamaño se hacen manchas). -->
+  <g fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round">
+    <path d="M7 25V7l18 18Z" />
+    <path d="M12 20v-6l6 6Z" stroke-width="1.8" />
+  </g>
+</svg>

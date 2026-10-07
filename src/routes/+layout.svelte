@@ -2,7 +2,6 @@
   // Tailwind v4 + tokens de shadcn. El fondo de plano de :global(body) de abajo GANA:
   // los estilos :global de Svelte van sin @layer, así que pisan el @layer base de Tailwind.
   import '../app.css';
-  import favicon from '$lib/assets/favicon.svg';
   import { onMount } from 'svelte';
   import { afterNavigate, goto, invalidate } from '$app/navigation';
   import { page } from '$app/state';
@@ -45,10 +44,6 @@
     });
   }
 </script>
-
-<svelte:head>
-  <link rel="icon" href={favicon} />
-</svelte:head>
 
 {#if page.url.pathname === '/login'}
   <!-- Login: solo el fondo de plano, sin barra ni sidebar. -->
