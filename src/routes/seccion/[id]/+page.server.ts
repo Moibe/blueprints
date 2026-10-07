@@ -9,7 +9,7 @@ export const load: PageServerLoad = ({ params }) => {
 	const seccion = Number.isInteger(id)
 		? db.select().from(secciones).where(eq(secciones.id, id)).get()
 		: undefined;
-	if (!seccion) error(404, 'Esa sección no existe');
+	if (!seccion) error(404, 'Ese proyecto no existe');
 
 	const lista = db
 		.select({ id: objetivos.id, nombre: objetivos.nombre })

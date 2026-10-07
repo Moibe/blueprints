@@ -18,7 +18,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 	const existe =
 		Number.isInteger(seccionId) &&
 		db.select({ id: secciones.id }).from(secciones).where(eq(secciones.id, seccionId)).get();
-	if (!existe) return json({ error: 'Esa sección no existe.' }, { status: 404 });
+	if (!existe) return json({ error: 'Ese proyecto no existe.' }, { status: 404 });
 
 	const objetivo = db
 		.insert(objetivos)

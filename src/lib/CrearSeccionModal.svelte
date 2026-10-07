@@ -55,7 +55,7 @@
     enviando = false;
 
     if (!res.ok || !body.seccion) {
-      error = body.error ?? 'No se pudo crear la sección.';
+      error = body.error ?? 'No se pudo crear el proyecto.';
       input.focus();
       return;
     }
@@ -76,7 +76,7 @@
   }}
 >
   <form class="hoja" onsubmit={crear}>
-    <span class="tag">Nueva sección</span>
+    <span class="tag">Nuevo proyecto</span>
     <h2 id="crear-titulo">¿Cómo se va a llamar?</h2>
 
     <label class="campo">

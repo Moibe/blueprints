@@ -19,10 +19,10 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 		return json({ error: `El nombre puede tener hasta ${NOMBRE_MAX} caracteres.` }, { status: 400 });
 	}
 	if (nombreRepetido(nombre, id)) {
-		return json({ error: 'Ya hay una sección con ese nombre.' }, { status: 409 });
+		return json({ error: 'Ya hay un proyecto con ese nombre.' }, { status: 409 });
 	}
 
 	const seccion = db.update(secciones).set({ nombre }).where(eq(secciones.id, id)).returning().get();
-	if (!seccion) return json({ error: 'Esa sección no existe.' }, { status: 404 });
+	if (!seccion) return json({ error: 'Ese proyecto no existe.' }, { status: 404 });
 	return json({ seccion });
 };

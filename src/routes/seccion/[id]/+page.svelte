@@ -35,7 +35,7 @@
   const logradas = $derived(objetivos.reduce((n, o) => n + o.tarjetas.filter((t) => t.hecho).length, 0));
   // Los totales viven en el rótulo; bajo el título solo queda el aviso de hoja vacía.
   const bajada = $derived(
-    objetivos.length === 0 ? 'Hoja en blanco: crea el primer objetivo de esta sección.' : ''
+    objetivos.length === 0 ? 'Hoja en blanco: crea el primer objetivo de este proyecto.' : ''
   );
 
   async function api(url: string, method: string, body?: object) {

@@ -10,13 +10,13 @@ export const POST: RequestHandler = async ({ request }) => {
 	const body = await request.json().catch(() => null);
 	const nombre = typeof body?.nombre === 'string' ? limpiarTexto(body.nombre) : '';
 
-	if (!nombre) return json({ error: 'Escribe un nombre para la sección.' }, { status: 400 });
+	if (!nombre) return json({ error: 'Escribe un nombre para el proyecto.' }, { status: 400 });
 	if (nombre.length > NOMBRE_MAX) {
 		return json({ error: `El nombre puede tener hasta ${NOMBRE_MAX} caracteres.` }, { status: 400 });
 	}
 
 	if (nombreRepetido(nombre)) {
-		return json({ error: 'Ya hay una sección con ese nombre.' }, { status: 409 });
+		return json({ error: 'Ya hay un proyecto con ese nombre.' }, { status: 409 });
 	}
 
 	const seccion = db.insert(secciones).values({ nombre }).returning().get();

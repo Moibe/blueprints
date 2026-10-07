@@ -87,7 +87,7 @@
           <span class="nav-code">{it.code}</span>
         </a>
       {:else}
-        <p class="vacio">Aún no hay secciones.<br />Crea la primera con <strong>+ Crear</strong>.</p>
+        <p class="vacio">Aún no hay proyectos.<br />Crea la primera con <strong>+ Crear</strong>.</p>
       {/each}
     </nav>
 
